@@ -24,9 +24,8 @@ app.register(fastifySwagger, {
 		consumes: ['application/json'],
 		produces: ['application/json'],
 		info: {
-			title: 'FIAP - Tech Challenge - Microserviço User',
-			description:
-				'Especificações da API do Microserviço User da aplicação de restaurante FIAP Tech Challenge.',
+			title: 'FIAP - Hackaton',
+			description: 'Especificações da API do Hackaton - FIAP Tech Challenge.',
 			version: '1.0.0',
 		},
 	},
@@ -67,7 +66,7 @@ async function run() {
 		host: '0.0.0.0',
 	});
 
-	logger.info('Documentation running at http://localhost:3334/docs');
+	logger.info('Documentation running at http://localhost:3339/docs');
 }
 
 run();

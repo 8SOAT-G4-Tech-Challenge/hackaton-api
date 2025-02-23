@@ -1,20 +1,20 @@
 version: '3.8'
 
 services:
-  postgres-user:
-    container_name: tech-challenge-user-postgres
+  postgres-hackaton-frame-zipper:
+    container_name: hackaton-frame-zipper-postgres
     image: postgres
     ports:
-      - '5433:5432'
+      - '5440:5432'
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: docker
-      POSTGRES_DB: tech-challenge-user
+      POSTGRES_DB: hackaton-frame-zipper
       PGDATA: '/var/lib/postgresql/data'
     volumes:
-      - postgres-data-user:/var/lib/postgresql/data
+      - postgres-data:/var/lib/postgresql/data
     networks:
-      - tech-challenge-user-network
+      - hackaton-frame-zipper-network
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U postgres']
       interval: 10s
@@ -22,45 +22,26 @@ services:
       retries: 5
 
   app:
-    container_name: tech-challenge-user-api
+    container_name: hackaton-frame-zipper-api
     build:
       context: .
       dockerfile: Dockerfile
     ports:
-      - '3334:3334'
-      - '5556:5556'
+      - '3339:3339'
+      - '5555:5555'
     env_file: .env
     depends_on:
-      postgres-user:
-        condition: service_healthy
-      redis:
+      postgres-hackaton-frame-zipper:
         condition: service_healthy
     environment:
       DATABASE_URL: ${DATABASE_URL}
-      REDIS_URL: ${REDIS_URL}
-      API_PORT: 3334
+      API_PORT: 3339
     networks:
-      - tech-challenge-user-network
-      - tech-challenge-global
-
-  redis:
-    container_name: tech-challenge-user-redis
-    image: redis:latest
-    ports:
-      - '6379:6379'
-    networks:
-      - tech-challenge-user-network
-    healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - hackaton-frame-zipper-network
 
 networks:
-  tech-challenge-user-network:
+  hackaton-frame-zipper-network:
     driver: bridge
-  tech-challenge-global:
-    external: true
 
 volumes:
-  postgres-data-user:
+  postgres-data:
