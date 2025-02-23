@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
+	await prisma.file.deleteMany({});
 	await prisma.user.deleteMany({});
 
 	console.log('Database cleaned successfully!');
