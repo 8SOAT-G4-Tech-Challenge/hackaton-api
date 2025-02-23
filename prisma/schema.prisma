@@ -7,7 +7,6 @@
 generator client {
   provider = "prisma-client-js"
 	binaryTargets = ["native", "linux-musl", "linux-musl-openssl-3.0.x", "linux-arm64-openssl-3.0.x"]
-  previewFeatures = ["omitApi"]
 }
 
 datasource db {
@@ -23,18 +22,7 @@ model User {
 	sessionToken	String? @db.VarChar(255) @map("session_token")
 	isAdmin			Boolean @map("is_admin")
 	createdAt		DateTime @default(now()) @map("created_at")
-	updatedAt DateTime @updatedAt @map("updated_at")
+	updatedAt 		DateTime @updatedAt @map("updated_at")
 
 	@@map("user")
-}
-
-model Customer {
-	id			String @id @default(uuid())
-	name		String? @db.VarChar(255)
-	email		String? @db.VarChar(255)
-	cpf			String @unique @db.VarChar(11)
-  createdAt	DateTime @default(now()) @map("created_at")
-	updatedAt DateTime @updatedAt @map("updated_at")
-
-	@@map("customer")
 }
