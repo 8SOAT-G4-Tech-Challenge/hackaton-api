@@ -54,7 +54,7 @@ app.register(helmet, {
 	noSniff: true,
 });
 
-app.register(routes, { prefix: '/users' });
+app.register(routes);
 
 app.setErrorHandler(errorHandler);
 

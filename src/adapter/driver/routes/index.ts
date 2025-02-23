@@ -1,26 +1,82 @@
 import { FastifyInstance } from 'fastify';
 
-import { UserService } from '@application/services';
-import { UserRepositoryImpl } from '@driven/infra';
-import { UserController } from '@driver/controllers';
+import { UserService, FileService } from '@application/services';
+import { UserRepositoryImpl, FileRepositoryImpl } from '@driven/infra';
+import { UserController, FileController } from '@driver/controllers';
+
+import {
+	SwaggerGetFileById,
+	SwaggerGetFiles,
+	SwaggerGetFilesByUserId,
+} from './docs/file';
+import { SwaggerHealthCheck } from './docs/health';
+import {
+	SwaggerCreateUser,
+	SwaggerDeleteUser,
+	SwaggerGetUserByEmail,
+	SwaggerGetUserById,
+	SwaggerGetUsers,
+	SwaggerUpdateUser,
+} from './docs/user';
 
 const userRepository = new UserRepositoryImpl();
+const fileRepository = new FileRepositoryImpl();
 
 const userService = new UserService(userRepository);
+const fileService = new FileService(fileRepository);
 
 const userController = new UserController(userService);
+const fileController = new FileController(fileService);
 
 export const routes = async (fastify: FastifyInstance) => {
-	fastify.get('/health', async (_request, reply) => {
-		reply.status(200).send({ message: 'Health Check User - Ok' });
+	fastify.get('/health', SwaggerHealthCheck, async (_request, reply) => {
+		reply.status(200).send({ message: 'Health Check - Ok' });
 	});
-	fastify.get('/users', userController.getUsers.bind(userController));
-	fastify.get('/users/:id', userController.getUserById.bind(userController));
+
+	fastify.get(
+		'/users',
+		SwaggerGetUsers,
+		userController.getUsers.bind(userController)
+	);
+	fastify.get(
+		'/users/:id',
+		SwaggerGetUserById,
+		userController.getUserById.bind(userController)
+	);
 	fastify.get(
 		'/users/email/:email',
+		SwaggerGetUserByEmail,
 		userController.getUserByEmail.bind(userController)
 	);
-	fastify.post('/users', userController.createUser.bind(userController));
-	fastify.put('/users/:id', userController.updateUser.bind(userController));
-	fastify.delete('/users/:id', userController.deleteUser.bind(userController));
+	fastify.post(
+		'/users',
+		SwaggerCreateUser,
+		userController.createUser.bind(userController)
+	);
+	fastify.put(
+		'/users/:id',
+		SwaggerUpdateUser,
+		userController.updateUser.bind(userController)
+	);
+	fastify.delete(
+		'/users/:id',
+		SwaggerDeleteUser,
+		userController.deleteUser.bind(userController)
+	);
+
+	fastify.get(
+		'/files',
+		SwaggerGetFiles,
+		fileController.getFiles.bind(fileController)
+	);
+	fastify.get(
+		'/files/:id',
+		SwaggerGetFileById,
+		fileController.getFileById.bind(fileController)
+	);
+	fastify.get(
+		'/users/:userId/files',
+		SwaggerGetFilesByUserId,
+		fileController.getFilesByUserId.bind(fileController)
+	);
 };
