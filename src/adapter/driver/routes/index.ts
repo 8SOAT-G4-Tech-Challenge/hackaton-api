@@ -1,9 +1,14 @@
 import { FastifyInstance } from 'fastify';
 
-import { UserService } from '@application/services';
-import { UserRepositoryImpl } from '@driven/infra';
-import { UserController } from '@driver/controllers';
+import { UserService, FileService } from '@application/services';
+import { UserRepositoryImpl, FileRepositoryImpl } from '@driven/infra';
+import { UserController, FileController } from '@driver/controllers';
 
+import {
+	SwaggerGetFileById,
+	SwaggerGetFiles,
+	SwaggerGetFilesByUserId,
+} from './docs/file';
 import { SwaggerHealthCheck } from './docs/health';
 import {
 	SwaggerCreateUser,
@@ -15,15 +20,19 @@ import {
 } from './docs/user';
 
 const userRepository = new UserRepositoryImpl();
+const fileRepository = new FileRepositoryImpl();
 
 const userService = new UserService(userRepository);
+const fileService = new FileService(fileRepository);
 
 const userController = new UserController(userService);
+const fileController = new FileController(fileService);
 
 export const routes = async (fastify: FastifyInstance) => {
 	fastify.get('/health', SwaggerHealthCheck, async (_request, reply) => {
 		reply.status(200).send({ message: 'Health Check - Ok' });
 	});
+
 	fastify.get(
 		'/users',
 		SwaggerGetUsers,
@@ -53,5 +62,21 @@ export const routes = async (fastify: FastifyInstance) => {
 		'/users/:id',
 		SwaggerDeleteUser,
 		userController.deleteUser.bind(userController)
+	);
+
+	fastify.get(
+		'/files',
+		SwaggerGetFiles,
+		fileController.getFiles.bind(fileController)
+	);
+	fastify.get(
+		'/files/:id',
+		SwaggerGetFileById,
+		fileController.getFileById.bind(fileController)
+	);
+	fastify.get(
+		'/users/:userId/files',
+		SwaggerGetFilesByUserId,
+		fileController.getFilesByUserId.bind(fileController)
 	);
 };

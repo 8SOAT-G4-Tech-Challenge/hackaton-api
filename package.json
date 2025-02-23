@@ -1,7 +1,7 @@
 {
-	"name": "tech-challenge-user",
+	"name": "hackaton-frame-zipper",
 	"version": "1.0.0",
-	"description": "User Microservice - API Restaurante FIAP Tech Challenge",
+	"description": "Hackaton - FIAP Tech Challenge",
 	"main": "index.js",
 	"scripts": {
 		"test-coverage": "jest --maxParallel=4 --coverage=true --forceExit --runInBand --detectOpenHandles",
@@ -42,7 +42,7 @@
 	"devDependencies": {
 		"@cucumber/cucumber": "^11.2.0",
 		"@types/jest": "^29.5.14",
-		"@types/node": "^20.14.10",
+		"@types/node": "^22.13.5",
 		"@types/pino": "^7.0.5",
 		"@typescript-eslint/eslint-plugin": "^7.15.0",
 		"@typescript-eslint/parser": "^7.15.0",
@@ -53,7 +53,7 @@
 		"jest": "^29.7.0",
 		"jest-sonar-reporter": "^2.0.0",
 		"pino-pretty": "^11.2.2",
-		"prisma": "^5.17.0",
+		"prisma": "^6.4.1",
 		"ts-jest": "^29.2.5",
 		"ts-node": "^10.9.2",
 		"tsup": "^8.1.0",
