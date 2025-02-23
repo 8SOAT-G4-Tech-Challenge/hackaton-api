@@ -1,5 +1,5 @@
 # Etapa 1: Build da aplicação
-FROM node:20 AS build
+FROM node:22.14 AS build
 
 # Define o diretório de trabalho
 WORKDIR /app
@@ -20,7 +20,7 @@ RUN npx prisma generate
 RUN npm run build
 
 # Etapa 2: Executar a aplicação
-FROM node:20-alpine AS run
+FROM node:22.14-alpine AS run
 
 # Define o diretório de trabalho
 WORKDIR /app

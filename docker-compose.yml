@@ -1,9 +1,7 @@
-version: '3.8'
-
 services:
   postgres-hackaton-frame-zipper:
     container_name: hackaton-frame-zipper-postgres
-    image: postgres
+    image: postgres:alpine
     ports:
       - '5440:5432'
     environment:
@@ -34,7 +32,7 @@ services:
       postgres-hackaton-frame-zipper:
         condition: service_healthy
     environment:
-      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_URL: 'postgresql://postgres:docker@postgres-hackaton-frame-zipper:5432/hackaton-frame-zipper?schema=public'
       API_PORT: 3339
     networks:
       - hackaton-frame-zipper-network
