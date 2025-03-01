@@ -1,13 +1,14 @@
 import { FastifyInstance } from 'fastify';
 
-import { UserService, FileService } from '@application/services';
-import { UserRepositoryImpl, FileRepositoryImpl } from '@driven/infra';
-import { UserController, FileController } from '@driver/controllers';
+import { FileService, UserService } from '@application/services';
+import { FileRepositoryImpl, UserRepositoryImpl } from '@driven/infra';
+import { FileController, UserController } from '@driver/controllers';
 
 import {
 	SwaggerGetFileById,
 	SwaggerGetFiles,
 	SwaggerGetFilesByUserId,
+	SwaggerProcessVideoFile,
 } from './docs/file';
 import { SwaggerHealthCheck } from './docs/health';
 import {
@@ -78,5 +79,10 @@ export const routes = async (fastify: FastifyInstance) => {
 		'/users/:userId/files',
 		SwaggerGetFilesByUserId,
 		fileController.getFilesByUserId.bind(fileController)
+	);
+	fastify.post(
+		'/files/process-video-file',
+		SwaggerProcessVideoFile,
+		fileController.processVideoFile.bind(fileController)
 	);
 };

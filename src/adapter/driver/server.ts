@@ -6,11 +6,14 @@ import logger from '@common/logger';
 import { errorHandler } from '@driver/errorHandler';
 import fastifyCors from '@fastify/cors';
 import helmet from '@fastify/helmet';
+import fastifyMultipart from '@fastify/multipart';
 import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUI from '@fastify/swagger-ui';
 import { routes } from '@routes/index';
 
-export const app = fastify();
+export const app = fastify({
+	bodyLimit: 50 * 1024 * 1024,
+});
 
 app.register(fastifyCors, {
 	origin: '*',
@@ -21,8 +24,8 @@ app.register(fastifySwagger, {
 		openapi: '3.0.1',
 	},
 	swagger: {
-		consumes: ['application/json'],
-		produces: ['application/json'],
+		consumes: ['application/json', 'multipart/form-data'],
+		produces: ['application/json', 'multipart/form-data'],
 		info: {
 			title: 'FIAP - Hackaton',
 			description: 'Especificações da API do Hackaton - FIAP Tech Challenge.',
@@ -33,6 +36,12 @@ app.register(fastifySwagger, {
 
 app.register(fastifySwaggerUI, {
 	routePrefix: '/docs',
+});
+
+app.register(fastifyMultipart, {
+	limits: {
+		fileSize: 50 * 1024 * 1024,
+	},
 });
 
 app.register(helmet, {

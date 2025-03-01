@@ -1,10 +1,10 @@
 import { StatusType } from '../types/statusType';
 
 export interface File {
-	id: string;
+	id?: string;
 	userId: string;
 	videoUrl: string;
-	imagesCompressedUrl?: string | null;
+	imagesCompressedUrl?: string | null | undefined;
 	status: StatusType;
 	createdAt: Date;
 	updatedAt: Date;

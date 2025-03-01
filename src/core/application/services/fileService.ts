@@ -1,8 +1,12 @@
-import { FileDto, fileSchema } from '@src/adapter/driver/schemas/fileSchema';
+import { StatusCodes } from 'http-status-codes';
+
+import { InvalidFileException } from '@exceptions/invalidFileException';
 import logger from '@src/core/common/logger';
 import { File } from '@src/core/domain/models/file';
 
 import { FileRepository } from '../ports/repository/fileRepository';
+import { fileHelper } from '../utils/fileHelper';
+import { videoHelper } from '../utils/videoHelper';
 
 export class FileService {
 	private readonly fileRepository;
@@ -29,21 +33,61 @@ export class FileService {
 		return files;
 	}
 
-	async processVideoFile(file: FileDto): Promise<File> {
-		fileSchema.parse(file);
+	async processVideoFile(
+		fileBuffer: Buffer,
+		originalFilename: string
+	): Promise<File> {
+		if (!videoHelper.isValidVideoFormat(originalFilename)) {
+			throw new InvalidFileException(
+				'Invalid video format. Supported formats: mp4, mov, mkv, avi, wmv, webm',
+				StatusCodes.BAD_REQUEST
+			);
+		}
 
-		logger.info('[FILE SERVICE] Processing file...');
+		const videoFilePath = fileHelper.saveFile(fileBuffer, originalFilename);
+		logger.info(`[FILE SERVICE] Video file saved at: ${videoFilePath}`);
 
-		const fileCreatedMock: File = {
-			id: '123',
-			userId: '123',
-			imagesCompressedUrl: 'https://example.com/image.jpg',
-			videoUrl: 'https://example.com/video.mp4',
-			createdAt: new Date(),
-			updatedAt: new Date(),
-			status: 'processed',
-		};
+		if (!(await videoHelper.isValidVideoDuration(videoFilePath))) {
+			throw new InvalidFileException(
+				'Video duration must be longer than 2 seconds',
+				StatusCodes.BAD_REQUEST
+			);
+		}
 
-		return fileCreatedMock;
+		try {
+			const imageFiles = await videoHelper.extractImages(videoFilePath);
+			logger.info(`[FILE SERVICE] Extracted ${imageFiles.length} images`);
+
+			if (imageFiles.length === 0) {
+				throw new InvalidFileException(
+					'No images were extracted from the video',
+					StatusCodes.BAD_REQUEST
+				);
+			}
+
+			const zipFilePath = await fileHelper.createZip(imageFiles);
+			logger.info(`[FILE SERVICE] ZIP created at: ${zipFilePath}`);
+
+			fileHelper.deleteFile(videoFilePath);
+
+			const fileToCreate: File = {
+				userId: '8ae7ce0c-e865-4504-9b64-a17869c78a6b', // mockando id de um user já criado para testes
+				imagesCompressedUrl: zipFilePath,
+				videoUrl: videoFilePath,
+				createdAt: new Date(),
+				updatedAt: new Date(),
+				status: 'processed',
+			};
+
+			const fileCreated = await this.fileRepository.createFile(fileToCreate);
+			logger.info(`[FILE SERVICE] File created with ID: ${fileCreated.id}`);
+
+			return fileCreated;
+		} catch (error) {
+			logger.error('[FILE SERVICE] Error processing video');
+			logger.error(error);
+			fileHelper.deleteFile(videoFilePath);
+			throw new Error('Error processing video file');
+		}
 	}
 }
