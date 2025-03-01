@@ -52,4 +52,12 @@ export class FileRepositoryImpl implements FileRepository {
 
 		return files;
 	}
+
+	async createFile(file: File): Promise<File> {
+		const createdFile = await prisma.file.create({
+			data: file,
+		});
+
+		return createdFile;
+	}
 }

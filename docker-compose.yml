@@ -36,6 +36,9 @@ services:
       API_PORT: 3339
     networks:
       - hackaton-frame-zipper-network
+    volumes:
+      - './src/storage/files:/app/dist/storage/files'
+      - './src/storage/uploads:/app/dist/storage/uploads'
 
 networks:
   hackaton-frame-zipper-network:

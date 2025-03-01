@@ -2,11 +2,10 @@ import { FastifyReply, FastifyRequest } from 'fastify';
 import { StatusCodes } from 'http-status-codes';
 
 import { handleError } from '@driver/errorHandler';
+import { CreateFileParams } from '@src/core/application/ports/input/file';
 import { FileService } from '@src/core/application/services';
 import logger from '@src/core/common/logger';
 import { File } from '@src/core/domain/models/file';
-
-import { FileDto } from '../schemas/fileSchema';
 
 export class FileController {
 	private readonly fileService;
@@ -62,14 +61,28 @@ export class FileController {
 		}
 	}
 
+	// eslint-disable-next-line consistent-return
 	async processVideoFile(
-		req: FastifyRequest<{ Body: FileDto }>,
+		req: FastifyRequest<{ Body: CreateFileParams }>,
 		reply: FastifyReply
 	) {
 		try {
 			logger.info('[FILE CONTROLLER] Processing video file...');
-			const videoFile = req.body;
-			const createdFile = await this.fileService.processVideoFile(videoFile);
+
+			const data = await req.file();
+
+			if (!data || !data.filename) {
+				return await reply.status(400).send({ message: 'No file uploaded' });
+			}
+
+			const fileBuffer = await data.toBuffer();
+			const originalFilename = data.filename;
+
+			const createdFile = await this.fileService.processVideoFile(
+				fileBuffer,
+				originalFilename
+			);
+
 			logger.info(`[FILE CONTROLLER] File processed: ${createdFile.id}`);
 			reply.code(StatusCodes.CREATED).send(createdFile);
 		} catch (error) {
