@@ -135,3 +135,7 @@ test-report.xml
 
 # cucumber
 cucumber-report.html
+
+# files
+src/storage/files/*
+src/storage/uploads/*
