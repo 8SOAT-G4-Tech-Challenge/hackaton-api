@@ -2,15 +2,11 @@ import ffmpeg from 'fluent-ffmpeg';
 import fs from 'fs';
 import path from 'path';
 
-const OUTPUT_DIR = path.join(__dirname, '../../driven/infra/storage/images');
+const OUTPUT_DIR = path.join(__dirname, '../../storage/files');
 
 export const videoHelper = {
 	extractImages: async (videoFilePath: string): Promise<string[]> => {
 		const duration = await videoHelper.getVideoDuration(videoFilePath);
-
-		if (duration < 2) {
-			throw new Error('Video is too short to extract images');
-		}
 
 		const timestamps = Array.from(
 			{ length: Math.floor(duration / 2) },
@@ -50,4 +46,15 @@ export const videoHelper = {
 		fs
 			.readdirSync(OUTPUT_DIR)
 			.filter((file: string) => file.startsWith('screenshot')),
+
+	isValidVideoFormat: (filename: string): boolean => {
+		const validFormats = ['mp4', 'mov', 'mkv', 'avi', 'wmv', 'webm'];
+		const fileExtension = path.extname(filename).toLowerCase().replace('.', '');
+		return validFormats.includes(fileExtension);
+	},
+
+	isValidVideoDuration: async (videoFilePath: string): Promise<boolean> => {
+		const duration = await videoHelper.getVideoDuration(videoFilePath);
+		return duration > 2;
+	},
 };

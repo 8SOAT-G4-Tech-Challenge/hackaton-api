@@ -1,3 +1,6 @@
+import { StatusCodes } from 'http-status-codes';
+
+import { InvalidFileException } from '@exceptions/invalidFileException';
 import logger from '@src/core/common/logger';
 import { File } from '@src/core/domain/models/file';
 
@@ -34,15 +37,32 @@ export class FileService {
 		fileBuffer: Buffer,
 		originalFilename: string
 	): Promise<File> {
+		if (!videoHelper.isValidVideoFormat(originalFilename)) {
+			throw new InvalidFileException(
+				'Invalid video format. Supported formats: mp4, mov, mkv, avi, wmv, webm',
+				StatusCodes.BAD_REQUEST
+			);
+		}
+
 		const videoFilePath = fileHelper.saveFile(fileBuffer, originalFilename);
 		logger.info(`[FILE SERVICE] Video file saved at: ${videoFilePath}`);
+
+		if (!(await videoHelper.isValidVideoDuration(videoFilePath))) {
+			throw new InvalidFileException(
+				'Video duration must be longer than 2 seconds',
+				StatusCodes.BAD_REQUEST
+			);
+		}
 
 		try {
 			const imageFiles = await videoHelper.extractImages(videoFilePath);
 			logger.info(`[FILE SERVICE] Extracted ${imageFiles.length} images`);
 
 			if (imageFiles.length === 0) {
-				throw new Error('No images were extracted from the video');
+				throw new InvalidFileException(
+					'No images were extracted from the video',
+					StatusCodes.BAD_REQUEST
+				);
 			}
 
 			const zipFilePath = await fileHelper.createZip(imageFiles);
@@ -51,7 +71,7 @@ export class FileService {
 			fileHelper.deleteFile(videoFilePath);
 
 			const fileToCreate: File = {
-				userId: '83ddd6e4-dbb0-46f0-b818-a6b70827bdab',
+				userId: '8ae7ce0c-e865-4504-9b64-a17869c78a6b', // mockando id de um user já criado para testes
 				imagesCompressedUrl: zipFilePath,
 				videoUrl: videoFilePath,
 				createdAt: new Date(),

@@ -28,6 +28,9 @@ WORKDIR /app
 # Instala FFmpeg e outras dependências necessárias para o Prisma no Alpine Linux
 RUN apk add --no-cache ffmpeg openssl
 
+# Remove arquivos ZIP antes do build
+RUN rm -rf src/storage/files/*.zip
+
 # Copia apenas os arquivos necessários da etapa de build
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/package-lock.json ./package-lock.json

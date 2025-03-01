@@ -8,6 +8,7 @@ import {
 	SwaggerGetFileById,
 	SwaggerGetFiles,
 	SwaggerGetFilesByUserId,
+	SwaggerProcessVideoFile,
 } from './docs/file';
 import { SwaggerHealthCheck } from './docs/health';
 import {
@@ -81,6 +82,7 @@ export const routes = async (fastify: FastifyInstance) => {
 	);
 	fastify.post(
 		'/files/process-video-file',
+		SwaggerProcessVideoFile,
 		fileController.processVideoFile.bind(fileController)
 	);
 };

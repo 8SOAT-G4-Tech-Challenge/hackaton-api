@@ -3,8 +3,8 @@ import JSZip from 'jszip';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 
-const TEMP_DIR = path.join(__dirname, '../../driven/infra/storage/uploads');
-const OUTPUT_DIR = path.join(__dirname, '../../driven/infra/storage/images');
+const TEMP_DIR = path.join(__dirname, '../../storage/uploads');
+const OUTPUT_DIR = path.join(__dirname, '../../storage/files');
 
 if (!fs.existsSync(TEMP_DIR)) fs.mkdirSync(TEMP_DIR, { recursive: true });
 if (!fs.existsSync(OUTPUT_DIR)) fs.mkdirSync(OUTPUT_DIR, { recursive: true });

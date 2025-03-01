@@ -37,8 +37,8 @@ services:
     networks:
       - hackaton-frame-zipper-network
     volumes:
-      - './src/adapter/driven/infra/storage/images:/app/dist/adapter/driven/infra/storage/images'
-      - './src/adapter/driven/infra/storage/uploads:/app/dist/adapter/driven/infra/storage/uploads'
+      - './src/storage/files:/app/dist/storage/files'
+      - './src/storage/uploads:/app/dist/storage/uploads'
 
 networks:
   hackaton-frame-zipper-network:
