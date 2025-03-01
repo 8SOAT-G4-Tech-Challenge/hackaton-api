@@ -1,8 +1,9 @@
-import { FileDto, fileSchema } from '@src/adapter/driver/schemas/fileSchema';
 import logger from '@src/core/common/logger';
 import { File } from '@src/core/domain/models/file';
 
 import { FileRepository } from '../ports/repository/fileRepository';
+import { fileHelper } from '../utils/fileHelper';
+import { videoHelper } from '../utils/videoHelper';
 
 export class FileService {
 	private readonly fileRepository;
@@ -29,21 +30,44 @@ export class FileService {
 		return files;
 	}
 
-	async processVideoFile(file: FileDto): Promise<File> {
-		fileSchema.parse(file);
+	async processVideoFile(
+		fileBuffer: Buffer,
+		originalFilename: string
+	): Promise<File> {
+		const videoFilePath = fileHelper.saveFile(fileBuffer, originalFilename);
+		logger.info(`[FILE SERVICE] Video file saved at: ${videoFilePath}`);
 
-		logger.info('[FILE SERVICE] Processing file...');
+		try {
+			const imageFiles = await videoHelper.extractImages(videoFilePath);
+			logger.info(`[FILE SERVICE] Extracted ${imageFiles.length} images`);
 
-		const fileCreatedMock: File = {
-			id: '123',
-			userId: '123',
-			imagesCompressedUrl: 'https://example.com/image.jpg',
-			videoUrl: 'https://example.com/video.mp4',
-			createdAt: new Date(),
-			updatedAt: new Date(),
-			status: 'processed',
-		};
+			if (imageFiles.length === 0) {
+				throw new Error('No images were extracted from the video');
+			}
 
-		return fileCreatedMock;
+			const zipFilePath = await fileHelper.createZip(imageFiles);
+			logger.info(`[FILE SERVICE] ZIP created at: ${zipFilePath}`);
+
+			fileHelper.deleteFile(videoFilePath);
+
+			const fileToCreate: File = {
+				userId: '83ddd6e4-dbb0-46f0-b818-a6b70827bdab',
+				imagesCompressedUrl: zipFilePath,
+				videoUrl: videoFilePath,
+				createdAt: new Date(),
+				updatedAt: new Date(),
+				status: 'processed',
+			};
+
+			const fileCreated = await this.fileRepository.createFile(fileToCreate);
+			logger.info(`[FILE SERVICE] File created with ID: ${fileCreated.id}`);
+
+			return fileCreated;
+		} catch (error) {
+			logger.error('[FILE SERVICE] Error processing video');
+			logger.error(error);
+			fileHelper.deleteFile(videoFilePath);
+			throw new Error('Error processing video file');
+		}
 	}
 }

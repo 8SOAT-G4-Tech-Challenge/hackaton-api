@@ -297,3 +297,94 @@ export const SwaggerGetFilesByUserId = {
 		},
 	},
 };
+
+export const SwaggerProcessVideoFile = {
+	schema: {
+		summary: 'Process a video file',
+		description:
+			'Uploads a video file, extracts images every 20 seconds, stores them in a ZIP file, and saves the file metadata in the database.',
+		tags: ['File'],
+		consumes: ['multipart/form-data'],
+		body: {
+			type: 'object',
+			properties: {
+				videoFile: {
+					type: 'string',
+					format: 'binary',
+					description: 'The video file to be uploaded',
+				},
+			},
+			required: ['videoFile'],
+		},
+		response: {
+			201: {
+				description: 'Video processed successfully and file metadata saved',
+				type: 'object',
+				properties: {
+					id: {
+						type: 'string',
+						format: 'uuid',
+					},
+					userId: {
+						type: 'string',
+						format: 'uuid',
+					},
+					videoUrl: {
+						type: 'string',
+					},
+					imagesCompressedUrl: {
+						type: 'string',
+					},
+					status: {
+						type: 'string',
+						enum: ['initialized', 'processing', 'processed', 'error'],
+					},
+					createdAt: {
+						type: 'string',
+						format: 'date-time',
+					},
+					updatedAt: {
+						type: 'string',
+						format: 'date-time',
+					},
+				},
+			},
+			400: {
+				description: 'Invalid request or missing file',
+				type: 'object',
+				properties: {
+					statusCode: {
+						type: 'integer',
+						example: 400,
+					},
+					error: {
+						type: 'string',
+						example: 'Bad Request',
+					},
+					message: {
+						type: 'string',
+						example: 'No file uploaded',
+					},
+				},
+			},
+			500: {
+				description: 'Unexpected error when processing video',
+				type: 'object',
+				properties: {
+					statusCode: {
+						type: 'integer',
+						example: 500,
+					},
+					error: {
+						type: 'string',
+						example: 'Internal Server Error',
+					},
+					message: {
+						type: 'string',
+						example: 'Error processing video file',
+					},
+				},
+			},
+		},
+	},
+};

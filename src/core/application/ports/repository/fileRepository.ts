@@ -4,4 +4,5 @@ export interface FileRepository {
 	getFiles(): Promise<File[]>;
 	getFileById(id: string): Promise<File | null>;
 	getFilesByUserId(email: string): Promise<File[]>;
+	createFile(file: File): Promise<File>;
 }

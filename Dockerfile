@@ -25,8 +25,8 @@ FROM node:22.14-alpine AS run
 # Define o diretório de trabalho
 WORKDIR /app
 
-# Instala as dependências necessárias para o Prisma no ambiente Alpine
-RUN apk add --no-cache openssl
+# Instala FFmpeg e outras dependências necessárias para o Prisma no Alpine Linux
+RUN apk add --no-cache ffmpeg openssl
 
 # Copia apenas os arquivos necessários da etapa de build
 COPY --from=build /app/package.json ./package.json
