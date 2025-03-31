@@ -21,19 +21,9 @@ enum Status {
 	error
 }
 
-model User {
-	id				String @id @default(uuid())
-	name			String? @db.VarChar(255)
-	email			String @unique @db.VarChar(255)
-	password		String @db.VarChar(255)
-	sessionToken	String? @db.VarChar(255) @map("session_token")
-	isAdmin			Boolean @map("is_admin")
-	createdAt		DateTime @default(now()) @map("created_at")
-	updatedAt 		DateTime @updatedAt @map("updated_at")
-
-	files 			File[] @relation("UserFiles")
-
-	@@map("user")
+enum Type {
+ 	error
+  	success
 }
 
 model File {
@@ -45,7 +35,20 @@ model File {
 	createdAt			DateTime @default(now()) @map("created_at")
 	updatedAt 			DateTime @updatedAt @map("updated_at")
 
-	user				User? @relation(fields: [userId], references: [id], name: "UserFiles")
+	notifications		Notification[] @relation("FileToNotification")
 
 	@@map("file")
+}
+
+model Notification {
+  id         String   @id @default(uuid())
+  userId     String   @db.VarChar(255) @map("user_id")
+  fileId     String   @db.VarChar(255) @map("file_id")
+  type       Type     @map("type")
+  text       String   @db.VarChar(255) @map("text")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  file       File     @relation(fields: [fileId], references: [id], name: "FileToNotification")
+
+  @@map("notification")
 }

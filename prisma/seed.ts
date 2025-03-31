@@ -1,63 +1,69 @@
 import { PrismaClient } from '@prisma/client';
+import { v4 as uuidv4 } from 'uuid';
 
 const prisma = new PrismaClient();
 
 async function main() {
-	// Criando usuários com upsert para evitar duplicação
-	const adminUser = await prisma.user.upsert({
-		where: { email: 'admin@example.com' },
-		update: {},
-		create: {
-			name: 'Admin User',
-			email: 'admin@example.com',
-			password: 'password123',
-			isAdmin: true,
-		},
-	});
+  const file1Id = uuidv4();
+  const file2Id = uuidv4();
+  const file3Id = uuidv4();
 
-	const regularUser = await prisma.user.upsert({
-		where: { email: 'user@example.com' },
-		update: {},
-		create: {
-			name: 'Regular User',
-			email: 'user@example.com',
-			password: 'password123',
-			isAdmin: false,
-		},
-	});
+  const file1UserId = uuidv4();
+  const file2UserId = uuidv4();
+  const file3UserId = uuidv4();
 
-	await prisma.file.createMany({
-		data: [
-			{
-				userId: adminUser.id,
-				status: 'processed',
-				videoUrl: 'https://example.com/video1.mp4',
-				imagesCompressedUrl: 'https://example.com/images1.zip',
-			},
-			{
-				userId: adminUser.id,
-				status: 'processing',
-				videoUrl: 'https://example.com/video2.mp4',
-				imagesCompressedUrl: 'https://example.com/images2.zip',
-			},
-			{
-				userId: regularUser.id,
-				status: 'error',
-				videoUrl: 'https://example.com/video3.mp4',
-				imagesCompressedUrl: 'https://example.com/images3.zip',
-			},
-		],
-	});
+  await prisma.file.createMany({
+    data: [
+      {
+        id: file1Id,
+        userId: file1UserId,
+        status: 'processed',
+        videoUrl: 'https://example.com/video1.mp4',
+        imagesCompressedUrl: 'https://example.com/images1.zip',
+      },
+      {
+        id: file2Id,
+        userId: file2UserId,
+        status: 'processing',
+        videoUrl: 'https://example.com/video2.mp4',
+        imagesCompressedUrl: 'https://example.com/images2.zip',
+      },
+      {
+        id: file3Id,
+        userId: file3UserId,
+        status: 'error',
+        videoUrl: 'https://example.com/video3.mp4',
+        imagesCompressedUrl: 'https://example.com/images3.zip',
+      },
+    ],
+  });
 
-	console.log('✅ Seed data created successfully!');
+  await prisma.notification.createMany({
+    data: [
+      {
+        userId: file1UserId,
+        fileId: file1Id,
+        type: 'success',
+        text: 'Arquivo processado com sucesso.',
+      },
+      {
+        userId: file2UserId,
+        fileId: file2Id,
+        type: 'error',
+        text: 'Erro ao processar o arquivo.',
+      },
+    ],
+  });
+
+  console.log('Seed data created successfully!');
 }
 
 main()
-	.then(async () => {
-		await prisma.$disconnect();
-	})
-	.catch(async (e) => {
-		console.error('❌ Error seeding data:', e);
-		await prisma.$disconnect();
-		process.exit(1);
-	});
+  .then(async () => {
+    await prisma.$disconnect();
+  })
+  .catch(async (e) => {
+    console.error('Error seeding data:', e);
+    await prisma.$disconnect();
+    process.exit(1);
+  });
