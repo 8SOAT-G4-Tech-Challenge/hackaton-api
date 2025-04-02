@@ -132,7 +132,7 @@ A aplicação está configurada com:
 
 ### Qualidade de código
 
-	- Utilização do SonarCloud para inspeção contínua da qualidade de código
+- Utilização do SonarCloud para inspeção contínua da qualidade de código
 
 ### Testes
 
