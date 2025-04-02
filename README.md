@@ -70,7 +70,6 @@ O sistema implementa um fluxo completo de processamento de vídeos e notificaç�
 	- O API Gateway aciona uma função Lambda de tokenização
 	-	A Lambda valida as credenciais com o Cognito e retorna um token JWT
 
-
 2. **Envio e Processamento de Vídeo**:
 
 	- O usuário autenticado envia um vídeo para a API principal
@@ -89,7 +88,8 @@ O sistema implementa um fluxo completo de processamento de vídeos e notificaç�
 
 	- O serviço de conversão envia o status de conclusão para a API principal
 	- A API principal atualiza o status no banco de dados
-	- A API recupera os dados do usuário no Cognito via ApiGateway / Lambda
+	- A API solicita os dados do usuário via API Gateway, que aciona uma função Lambda dedicada
+	- A função Lambda consulta os dados no Cognito e retorna as informações necessárias
 	- A API envia uma notificação via SNS com o status atualizado (sucesso ou falha)
 	- O usuário recebe um SMS informando sobre a conclusão do processamento
 	- O usuário pode acessar e baixar o arquivo ZIP através da API principal
@@ -99,7 +99,6 @@ O sistema implementa um fluxo completo de processamento de vídeos e notificaç�
 A aplicação está configurada com:
 
 - Logs estruturados usando Pino
-- Métricas de performance
 - Health checks para verificar a saúde do sistema
 
 ### Segurança
