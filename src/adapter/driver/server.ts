@@ -75,7 +75,7 @@ async function run() {
 		host: '0.0.0.0',
 	});
 
-	logger.info('Documentation running at http://localhost:3339/docs');
+	logger.info('Documentation running at http://localhost:3333/docs');
 }
 
 run();

@@ -5,6 +5,7 @@ import { FileRepositoryImpl, NotificationRepositoryImpl } from '@driven/infra';
 import { FileController, NotificationController } from '@driver/controllers';
 
 import {
+	SwaggerCreateFile,
 	SwaggerGetFileById,
 	SwaggerGetFiles,
 	SwaggerGetFilesByUserId
@@ -41,6 +42,11 @@ export const routes = async (fastify: FastifyInstance) => {
 		SwaggerGetFilesByUserId,
 		fileController.getFilesByUserId.bind(fileController)
 	);
+	fastify.post(
+		'/files',
+		SwaggerCreateFile,
+		fileController.createFile.bind(fileController)
+	)
 	fastify.get(
 		'/notifications',
 		SwaggerGetNotifications,

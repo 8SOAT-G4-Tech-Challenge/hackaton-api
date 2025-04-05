@@ -20,6 +20,7 @@ export const SwaggerGetFiles = {
 						},
 						videoUrl: {
 							type: 'string',
+							nullable: true,
 						},
 						imagesCompressedUrl: {
 							type: 'string',
@@ -96,6 +97,7 @@ export const SwaggerGetFileById = {
 					},
 					videoUrl: {
 						type: 'string',
+						nullable: true,
 					},
 					imagesCompressedUrl: {
 						type: 'string',
@@ -211,6 +213,7 @@ export const SwaggerGetFilesByUserId = {
 						},
 						videoUrl: {
 							type: 'string',
+							nullable: true,
 							description: 'URL where the video file is stored',
 						},
 						imagesCompressedUrl: {
@@ -295,5 +298,14 @@ export const SwaggerGetFilesByUserId = {
 				},
 			},
 		},
+	},
+};
+
+export const SwaggerCreateFile = {
+	schema: {
+		summary: 'Create file',
+		description: 'Create file',
+		tags: ['File'],
+		consumes: ['multipart/form-data']
 	},
 };
