@@ -1,6 +1,4 @@
-import { StatusCodes } from 'http-status-codes';
 
-import { InvalidFileException } from '@exceptions/invalidFileException';
 import logger from '@src/core/common/logger';
 import { File } from '@src/core/domain/models/file';
 

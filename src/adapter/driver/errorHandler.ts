@@ -41,7 +41,7 @@ export function handleError(
 		responseError.status = error?.statusCode;
 	}
 
-	logger.error(`[❌ ERROR HANDLER] Unexpected error: ${JSON.stringify(error)}`);
+	logger.error(`[ERROR HANDLER] Unexpected error: ${JSON.stringify(error)}`);
 
 	reply.status(responseError.status).send(JSON.stringify(responseError));
 }

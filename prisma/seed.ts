@@ -43,13 +43,13 @@ async function main() {
       {
         userId: file1UserId,
         fileId: file1Id,
-        type: 'success',
+        notificationType: 'success',
         text: 'Arquivo processado com sucesso.',
       },
       {
         userId: file2UserId,
         fileId: file2Id,
-        type: 'error',
+        notificationType: 'error',
         text: 'Erro ao processar o arquivo.',
       },
     ],

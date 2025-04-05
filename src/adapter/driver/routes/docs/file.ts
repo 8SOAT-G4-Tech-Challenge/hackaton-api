@@ -297,13 +297,3 @@ export const SwaggerGetFilesByUserId = {
 		},
 	},
 };
-
-export const SwaggerProcessVideoFile = {
-	schema: {
-		summary: 'Process a video file',
-		description:
-			'Uploads a video file, extracts images every 2 seconds, stores them in a ZIP file, and saves the file metadata in the database.',
-		tags: ['File'],
-		consumes: ['multipart/form-data'],
-	},
-};

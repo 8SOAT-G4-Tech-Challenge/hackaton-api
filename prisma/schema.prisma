@@ -21,7 +21,7 @@ enum Status {
 	error
 }
 
-enum Type {
+enum NotificationType {
  	error
   	success
 }
@@ -30,7 +30,7 @@ model File {
 	id					String @id @default(uuid())
 	userId 				String @db.VarChar(255) @map("user_id")
 	status				Status @map("status")
-	videoUrl			String @db.VarChar(255) @map("video_url")
+	videoUrl			String? @db.VarChar(255) @map("video_url")
 	imagesCompressedUrl String? @db.VarChar(255) @map("images_compressed_url")
 	createdAt			DateTime @default(now()) @map("created_at")
 	updatedAt 			DateTime @updatedAt @map("updated_at")
@@ -42,11 +42,11 @@ model File {
 
 model Notification {
   id         String   @id @default(uuid())
-  userId     String   @db.VarChar(255) @map("user_id")
-  fileId     String   @db.VarChar(255) @map("file_id")
-  type       Type     @map("type")
-  text       String   @db.VarChar(255) @map("text")
-  createdAt  DateTime @default(now()) @map("created_at")
+  userId     String   @db.VarChar(255)  @map("user_id")
+  fileId     String   @db.VarChar(255)  @map("file_id")
+  notificationType       NotificationType     		@map("notification_type")
+  text       String   @db.VarChar(255)  @map("text")
+  createdAt  DateTime @default(now())   @map("created_at")
 
   file       File     @relation(fields: [fileId], references: [id], name: "FileToNotification")
 
