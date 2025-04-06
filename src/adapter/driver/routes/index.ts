@@ -6,6 +6,8 @@ import { FileController, NotificationController } from '@driver/controllers';
 import { AwsSimpleStorageImpl } from '@src/adapter/driven/infra/awsSimpleStorageImpl';
 import { SimpleStorageService } from '@src/core/application/services/simpleStorageService';
 
+import { UpdateFileParams } from '@src/core/application/ports/input/file';
+import { SmsService } from '@src/core/application/services/smsService';
 import { authMiddleware } from '../middlewares/auth';
 
 const fileRepository = new FileRepositoryImpl();
@@ -13,9 +15,10 @@ const notificationRepository = new NotificationRepositoryImpl();
 
 const awsSimpleStorageImpl = new AwsSimpleStorageImpl();
 const simpleStorageService = new SimpleStorageService(awsSimpleStorageImpl);
+const smsService = new SmsService();
+const notificationService = new NotificationService(notificationRepository, smsService);
 
-const fileService = new FileService(fileRepository, simpleStorageService);
-const notificationService = new NotificationService(notificationRepository);
+const fileService = new FileService(fileRepository, simpleStorageService, notificationService);
 
 const fileController = new FileController(fileService);
 const notificationController = new NotificationController(notificationService);
@@ -34,6 +37,11 @@ export const routes = async (fastify: FastifyInstance) => {
 		'/files',
 		{ preHandler: authMiddleware },
 		fileController.createFile.bind(fileController)
+	);
+	fastify.put<{ Body: UpdateFileParams }>(
+		'/files/:id',
+		{ preHandler: authMiddleware },
+		fileController.updateFile.bind(fileController)
 	);
 	fastify.get(
 		'/notifications',

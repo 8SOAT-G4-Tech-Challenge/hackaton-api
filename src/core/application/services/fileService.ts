@@ -5,19 +5,25 @@ import { File } from '@src/core/domain/models/file';
 import { InvalidFileException } from '../exceptions/invalidFileException';
 import { CreateFileParams, UpdateFileParams } from '../ports/input/file';
 import { FileRepository } from '../ports/repository/fileRepository';
+import { NotificationService } from './notificationService';
 import { SimpleStorageService } from './simpleStorageService';
+import { CreateNotificationParams } from '../ports/input/notification';
 
 export class FileService {
 	private readonly fileRepository;
 
 	private readonly simpleStorageService;
 
+	private readonly notificationService;
+
 	constructor(
 		fileRepository: FileRepository,
-		simpleStorageService: SimpleStorageService
+		simpleStorageService: SimpleStorageService,
+		notificationService: NotificationService
 	) {
 		this.fileRepository = fileRepository;
 		this.simpleStorageService = simpleStorageService;
+		this.notificationService = notificationService;
 	}
 
 	async getFiles(): Promise<File[]> {
@@ -39,7 +45,7 @@ export class FileService {
 	}
 
 	async createFile(
-		file: CreateFileParams,
+		createFileParams: CreateFileParams,
 		videoFile: MultipartFile | undefined
 	): Promise<File> {
 		if (!videoFile) {
@@ -47,17 +53,17 @@ export class FileService {
 			throw new InvalidFileException('videoFile não é válido.');
 		}
 
-		this.validateVideoFormat(videoFile.filename);
+		this._validateVideoFormat(videoFile.filename);
 
-		logger.info('[FILE SERVICE] Creating file...');
-
+		logger.info('[FILE SERVICE] Uploading video...');
 		const videoUrl = await this.simpleStorageService.uploadVideo(
-			file.userId,
+			createFileParams.userId,
 			videoFile
 		);
 
+		logger.info('[FILE SERVICE] Creating file...');
 		const fileToCreate: File = {
-			userId: file.userId,
+			userId: createFileParams.userId,
 			videoUrl,
 			imagesCompressedUrl: null,
 			status: 'initialized',
@@ -65,59 +71,60 @@ export class FileService {
 			updatedAt: new Date(),
 		};
 
-		// const createdFile: File = await this.fileRepository.createFile(
-		// 	fileToCreate
-		// );
-		logger.info('[FILE SERVICE] File created');
+		const createdFile: File = await this.fileRepository.createFile(
+			fileToCreate
+		);
 
 		logger.info('[FILE SERVICE] Requesting hackaton-converter...');
-		// Chamar o hackaton-converter enviando o videoUrl e o userId
+		// TODO: Chamar o hackaton-converter para a conversão do vídeo
 
-		return fileToCreate;
+		return createdFile;
 	}
 
-	async updateFile(fileParams: UpdateFileParams): Promise<File> {
-		const existingFile = this.fileRepository.getFileById(fileParams.id);
-
-		if (!existingFile) {
-			throw new InvalidFileException(
-				`Category Product with ID ${fileParams.id} not found.`
-			);
-		}
-
-		// chamar o hackaton-sso para pegar o telefone do user
-		// chamar o service de notification para envio do SMS
+	async updateFile(updateFileParams: UpdateFileParams): Promise<File> {
+		const existingFile = await this.fileRepository.getFileByIdOrThrow(updateFileParams.id);
+		await this.fileRepository.getFileByUserIdOrThrow(updateFileParams.userId);
 
 		logger.info('[FILE SERVICE] Updating file...');
 		const fileToUpdate: File = {
-			id: fileParams.id,
-			userId: fileParams.userId,
-			videoUrl: fileParams.videoFileKey,
-			imagesCompressedUrl: fileParams.compressedFileKey,
-			status: fileParams.status,
+			id: existingFile.id,
+			userId: existingFile.userId,
+			videoUrl: existingFile.videoUrl,
+			createdAt: existingFile.createdAt,
+			imagesCompressedUrl: updateFileParams.compressedFileKey,
+			status: updateFileParams.status,
 			updatedAt: new Date(),
 		};
 
-		const updatedFile: File = await this.fileRepository.updateFile(
+		const fileUpdated = await this.fileRepository.updateFile(
 			fileToUpdate
 		);
-		logger.info('[FILE SERVICE] File updated');
-		return updatedFile;
+
+		const createNotificationParams: CreateNotificationParams = {
+			userId: existingFile.userId,
+			userPhoneNumber: updateFileParams.userPhoneNumber,
+			fileStatus: existingFile.status,
+			fileId: existingFile.id,
+			imagesCompressedUrl: fileUpdated.imagesCompressedUrl
+		}
+
+		this.notificationService.createNotification(createNotificationParams);
+
+		return fileUpdated;
 	}
 
-	private validateVideoFormat(fileName: string): void {
-		logger.info('[FILE SERVICE] Validating video format');
+	private _validateVideoFormat(fileName: string): void {
+		logger.info('[FILE SERVICE] Validating video format...');
 
 		const allowedFormats = ['mp4', 'mov', 'mkv', 'avi', 'wmv', 'webm'];
 		const fileExtension = fileName.split('.').pop()?.toLowerCase();
 
 		if (!fileExtension || !allowedFormats.includes(fileExtension)) {
-			logger.info(`[FILE SERVICE] invalid format: ${fileExtension}`);
 			throw new InvalidFileException(
-				`Invalid video format. Allowed formats: ${allowedFormats.join(', ')}`
+				`Invalid video format.
+				Current format: ${fileExtension}.
+				Allowed formats: ${allowedFormats.join(', ')}`
 			);
 		}
-
-		logger.info('[FILE SERVICE] Valid format');
 	}
 }

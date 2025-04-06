@@ -49,4 +49,26 @@ export class NotificationRepositoryImpl implements NotificationRepository {
 
         return notifications;
     }
+
+    async createNotification(notification: Notification): Promise<Notification> {
+        const createdNotification = await prisma.notification.create({
+            data: {
+                userId: notification.userId,
+                fileId: notification.fileId,
+                notificationType: notification.notificationType,
+                text: notification.text,
+                createdAt: notification.createdAt
+            },
+            select: {
+                id: true,
+                userId: true,
+                fileId: true,
+                notificationType: true,
+                text: true,
+                createdAt: true
+            },
+        });
+
+        return createdNotification;
+    }
 }
