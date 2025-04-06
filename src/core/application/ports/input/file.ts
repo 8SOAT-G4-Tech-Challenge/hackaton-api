@@ -1,5 +1,5 @@
-import { StatusType } from '@src/core/domain/types/statusType';
 import { MultipartFile } from '@fastify/multipart';
+import { StatusType } from '@src/core/domain/types/statusType';
 
 export type MultipartFileBuffer = MultipartFile & { buffer: Buffer };
 
@@ -13,4 +13,4 @@ export type UpdateFileParams = {
 	compressedFileKey: string;
 	videoFileKey: string;
 	status: StatusType;
-}
+};

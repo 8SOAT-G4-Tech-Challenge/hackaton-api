@@ -1,4 +1,4 @@
 export const NotificationTypeEnum = {
 	success: 'success',
-	error: 'error'
+	error: 'error',
 } as const;

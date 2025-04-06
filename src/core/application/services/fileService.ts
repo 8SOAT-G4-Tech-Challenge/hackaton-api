@@ -1,5 +1,4 @@
 import { MultipartFile } from '@fastify/multipart';
-
 import logger from '@src/core/common/logger';
 import { File } from '@src/core/domain/models/file';
 
@@ -32,10 +31,13 @@ export class FileService {
 		return files;
 	}
 
-	async createFile(file: CreateFileParams, videoFile: MultipartFile | undefined): Promise<File> {
+	async createFile(
+		file: CreateFileParams,
+		videoFile: MultipartFile | undefined
+	): Promise<File> {
 		if (!videoFile) {
 			logger.info('[FILE SERVICE] videoFile is null or undefined');
-			throw new InvalidFileException(`videoFile não é válido.`);
+			throw new InvalidFileException('videoFile não é válido.');
 		}
 
 		this.validateVideoFormat(videoFile.filename);
@@ -50,7 +52,9 @@ export class FileService {
 			updatedAt: new Date(),
 		};
 
-		const createdFile: File = await this.fileRepository.createFile(fileToCreate);
+		const createdFile: File = await this.fileRepository.createFile(
+			fileToCreate
+		);
 		logger.info('[FILE SERVICE] File created');
 
 		logger.info('[FILE SERVICE] Requesting hackaton-converter...');
@@ -60,7 +64,6 @@ export class FileService {
 	}
 
 	async updateFile(fileParams: UpdateFileParams): Promise<File> {
-
 		const existingFile = this.fileRepository.getFileById(fileParams.id);
 
 		if (!existingFile) {
@@ -69,8 +72,8 @@ export class FileService {
 			);
 		}
 
-		//chamar o hackaton-sso para pegar o telefone do user
-		//chamar o service de notification para envio do SMS
+		// chamar o hackaton-sso para pegar o telefone do user
+		// chamar o service de notification para envio do SMS
 
 		logger.info('[FILE SERVICE] Updating file...');
 		const fileToUpdate: File = {
@@ -80,9 +83,11 @@ export class FileService {
 			imagesCompressedUrl: fileParams.compressedFileKey,
 			status: fileParams.status,
 			updatedAt: new Date(),
-		}
+		};
 
-		const updatedFile: File = await this.fileRepository.updateFile(fileToUpdate);
+		const updatedFile: File = await this.fileRepository.updateFile(
+			fileToUpdate
+		);
 		logger.info('[FILE SERVICE] File updated');
 		return updatedFile;
 	}
@@ -95,7 +100,9 @@ export class FileService {
 
 		if (!fileExtension || !allowedFormats.includes(fileExtension)) {
 			logger.info(`[FILE SERVICE] invalid format: ${fileExtension}`);
-			throw new InvalidFileException(`Invalid video format. Allowed formats: ${allowedFormats.join(', ')}`);
+			throw new InvalidFileException(
+				`Invalid video format. Allowed formats: ${allowedFormats.join(', ')}`
+			);
 		}
 
 		logger.info('[FILE SERVICE] Valid format');

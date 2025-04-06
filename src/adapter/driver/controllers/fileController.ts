@@ -2,10 +2,10 @@ import { FastifyReply, FastifyRequest } from 'fastify';
 import { StatusCodes } from 'http-status-codes';
 
 import { handleError } from '@driver/errorHandler';
+import { UpdateFileParams } from '@src/core/application/ports/input/file';
 import { FileService } from '@src/core/application/services';
 import logger from '@src/core/common/logger';
 import { File } from '@src/core/domain/models/file';
-import { CreateFileParams, UpdateFileParams } from '@src/core/application/ports/input/file';
 
 export class FileController {
 	private readonly fileService;
@@ -61,14 +61,14 @@ export class FileController {
 		}
 	}
 
-	async createFile(
-		req: FastifyRequest<{ Body: CreateFileParams }>,
-		reply: FastifyReply
-	) {
+	async createFile(req: FastifyRequest, reply: FastifyReply) {
 		try {
-			logger.info(`[FILE CONTROLLER] Creating file...`);
+			logger.info('[FILE CONTROLLER] Creating file...');
 			const videoFile = await req.file();
-			const file: File = await this.fileService.createFile(req.body, videoFile);
+			const file: File = await this.fileService.createFile(
+				{ userId: req.user.id },
+				videoFile
+			);
 			reply.code(StatusCodes.OK).send(file);
 		} catch (error) {
 			handleError(req, reply, error);
@@ -80,7 +80,7 @@ export class FileController {
 		reply: FastifyReply
 	) {
 		try {
-			logger.info(`[FILE CONTROLLER] Updating file...`);
+			logger.info('[FILE CONTROLLER] Updating file...');
 			const file: File = await this.fileService.updateFile(req.body);
 			reply.code(StatusCodes.OK).send(file);
 		} catch (error) {
