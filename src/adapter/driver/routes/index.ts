@@ -5,8 +5,10 @@ import { FileRepositoryImpl, NotificationRepositoryImpl } from '@driven/infra';
 import { FileController, NotificationController } from '@driver/controllers';
 import { AwsSimpleQueueImpl } from '@src/adapter/driven/infra/awsSimpleQueueImpl';
 import { AwsSimpleStorageImpl } from '@src/adapter/driven/infra/awsSimpleStorageImpl';
+import { UpdateFileParams } from '@src/core/application/ports/input/file';
 import { SimpleQueueService } from '@src/core/application/services/simpleQueueService';
 import { SimpleStorageService } from '@src/core/application/services/simpleStorageService';
+import { SmsService } from '@src/core/application/services/smsService';
 
 import { authMiddleware } from '../middlewares/auth';
 
@@ -16,15 +18,21 @@ const notificationRepository = new NotificationRepositoryImpl();
 const awsSimpleStorageImpl = new AwsSimpleStorageImpl();
 const simpleStorageService = new SimpleStorageService(awsSimpleStorageImpl);
 
+const smsService = new SmsService();
+const notificationService = new NotificationService(
+	notificationRepository,
+	smsService
+);
+
 const awsSimpleQueueImpl = new AwsSimpleQueueImpl();
 const simpleQueueService = new SimpleQueueService(awsSimpleQueueImpl);
 
 const fileService = new FileService(
 	fileRepository,
 	simpleStorageService,
-	simpleQueueService
+	simpleQueueService,
+	notificationService
 );
-const notificationService = new NotificationService(notificationRepository);
 
 const fileController = new FileController(fileService);
 const notificationController = new NotificationController(notificationService);
@@ -43,6 +51,11 @@ export const routes = async (fastify: FastifyInstance) => {
 		'/files',
 		{ preHandler: authMiddleware },
 		fileController.createFile.bind(fileController)
+	);
+	fastify.put<{ Body: UpdateFileParams }>(
+		'/files/:id',
+		{ preHandler: authMiddleware },
+		fileController.updateFile.bind(fileController)
 	);
 	fastify.get(
 		'/notifications',

@@ -1,13 +1,20 @@
 import logger from '@src/core/common/logger';
 import { Notification } from '@src/core/domain/models/notification';
+import { CreateNotificationParams } from './../ports/input/notification';
 
+import { ERROR_MESSAGE, PROCESSED_MESSAGE } from '@src/core/domain/constants/messages';
+import { InvalidNotificationException } from '../exceptions/invalidNotificationException';
 import { NotificationRepository } from '../ports/repository/notificationRepository';
+import { SmsService } from './smsService';
 
 export class NotificationService {
 	private readonly notificationRepository;
 
-	constructor(notificationRepository: NotificationRepository) {
+	private readonly smsService;
+
+	constructor(notificationRepository: NotificationRepository, smsService: SmsService) {
 		this.notificationRepository = notificationRepository;
+		this.smsService = smsService;
 	}
 
 	async getNotifications(): Promise<Notification[]> {
@@ -29,5 +36,41 @@ export class NotificationService {
 		const notifications: Notification[] =
 			await this.notificationRepository.getNotificationsByUserId(userId);
 		return notifications;
+	}
+
+	async createNotification(createNotificationParams: CreateNotificationParams): Promise<Notification> {
+		logger.info('[NOTIFICATION SERVICE] Creating notification...');
+
+		if (!createNotificationParams.fileId) {
+			throw new InvalidNotificationException(`fileId ${createNotificationParams.fileId} não é válido.`);
+		}
+
+		if (createNotificationParams.fileStatus == 'processed' && !createNotificationParams.imagesCompressedUrl) {
+			throw new InvalidNotificationException(`imagesCompressedUrl ${createNotificationParams.imagesCompressedUrl} não é válido.`);
+		}
+
+		const text = createNotificationParams.fileStatus === 'processed'
+			? PROCESSED_MESSAGE(createNotificationParams.imagesCompressedUrl!)
+			: ERROR_MESSAGE
+
+		const notification: Notification = {
+			userId: createNotificationParams.userId,
+			fileId: createNotificationParams.fileId,
+			notificationType: createNotificationParams.fileStatus === 'processed' ? 'success' : 'error',
+			text: text,
+			createdAt: new Date(),
+		};
+
+		const notificationCreated = await this.notificationRepository.createNotification(notification);
+
+		if (createNotificationParams.userPhoneNumber) {
+			try {
+				await this.smsService.sendSms(createNotificationParams.userPhoneNumber, text);
+			} catch (error) {
+				logger.error(`[NOTIFICATION SERVICE] Erro ao enviar SMS: ${error}`);
+			}
+		}
+
+		return notificationCreated;
 	}
 }

@@ -81,7 +81,13 @@ export class FileController {
 	) {
 		try {
 			logger.info('[FILE CONTROLLER] Updating file...');
-			const file: File = await this.fileService.updateFile(req.body);
+
+			const updateFileParams: UpdateFileParams = {
+				...req.body,
+				userPhoneNumber: req.user.phoneNumber,
+			};
+
+			const file: File = await this.fileService.updateFile(updateFileParams);
 			reply.code(StatusCodes.OK).send(file);
 		} catch (error) {
 			handleError(req, reply, error);
