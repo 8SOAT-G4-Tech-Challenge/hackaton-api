@@ -23,7 +23,7 @@ enum Status {
 
 enum NotificationType {
  	error
-  	success
+  success
 }
 
 model File {

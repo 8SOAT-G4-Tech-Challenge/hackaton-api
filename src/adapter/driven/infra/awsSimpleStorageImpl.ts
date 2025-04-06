@@ -33,19 +33,19 @@ export class AwsSimpleStorageImpl implements AwsSimpleStorage {
 	}
 
 	async uploadFile(bucketKey: string, file: MultipartFile): Promise<void> {
-		const fileTest = await this.saveMultipartToTmp(file);
+		const tempFile = await this.saveMultipartToTmp(file);
 
 		const client = new S3Client({ region: process.env.AWS_REGION });
 		const bucket = process.env.AWS_BUCKET;
 
-		const fileContent = fs.readFileSync(fileTest.path);
+		const fileContent = fs.readFileSync(tempFile.path);
 
 		const input = {
 			Bucket: bucket,
 			Key: bucketKey,
 			Body: fileContent,
 			ContentType: file.mimetype,
-			ContentLength: fileTest.size,
+			ContentLength: fileContent.length,
 		};
 
 		logger.info(

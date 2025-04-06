@@ -1,23 +1,27 @@
+import logger from '@common/logger';
+import { File } from '@domain/models/file';
+import { InvalidFileException } from '@exceptions/invalidFileException';
 import { MultipartFile } from '@fastify/multipart';
-import logger from '@src/core/common/logger';
-import { File } from '@src/core/domain/models/file';
-
-import { InvalidFileException } from '../exceptions/invalidFileException';
-import { CreateFileParams, UpdateFileParams } from '../ports/input/file';
-import { FileRepository } from '../ports/repository/fileRepository';
-import { SimpleStorageService } from './simpleStorageService';
+import { CreateFileParams, UpdateFileParams } from '@ports/input/file';
+import { FileRepository } from '@ports/repository/fileRepository';
+import { SimpleQueueService } from '@services/simpleQueueService';
+import { SimpleStorageService } from '@services/simpleStorageService';
 
 export class FileService {
 	private readonly fileRepository;
 
 	private readonly simpleStorageService;
 
+	private readonly simpleQueueService;
+
 	constructor(
 		fileRepository: FileRepository,
-		simpleStorageService: SimpleStorageService
+		simpleStorageService: SimpleStorageService,
+		simpleQueueService: SimpleQueueService
 	) {
 		this.fileRepository = fileRepository;
 		this.simpleStorageService = simpleStorageService;
+		this.simpleQueueService = simpleQueueService;
 	}
 
 	async getFiles(): Promise<File[]> {
@@ -65,13 +69,15 @@ export class FileService {
 			updatedAt: new Date(),
 		};
 
-		// const createdFile: File = await this.fileRepository.createFile(
-		// 	fileToCreate
-		// );
+		await this.fileRepository.createFile(fileToCreate);
+
 		logger.info('[FILE SERVICE] File created');
 
-		logger.info('[FILE SERVICE] Requesting hackaton-converter...');
-		// Chamar o hackaton-converter enviando o videoUrl e o userId
+		await this.simpleQueueService.publishMessage({
+			fileName: videoFile.filename,
+			fileStorageKey: videoUrl || '',
+			userId: file.userId,
+		});
 
 		return fileToCreate;
 	}

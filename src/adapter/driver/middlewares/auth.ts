@@ -21,10 +21,8 @@ const getUserDataFromLambda = async (token: string, reply: FastifyReply) => {
 
 	const responseData = JSON.parse(Buffer.from(response.Payload).toString());
 
-	if (response.FunctionError) {
-		throw new Error(
-			`Lambda error: ${responseData.errorMessage || 'Unknown error'}`
-		);
+	if (response.FunctionError || responseData.statusCode === 500) {
+		return reply.status(401).send({ message: 'Token expired' });
 	}
 
 	return responseData.body;
