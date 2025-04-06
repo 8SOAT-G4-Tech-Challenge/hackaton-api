@@ -5,12 +5,19 @@ import { File } from '@src/core/domain/models/file';
 import { InvalidFileException } from '../exceptions/invalidFileException';
 import { CreateFileParams, UpdateFileParams } from '../ports/input/file';
 import { FileRepository } from '../ports/repository/fileRepository';
+import { SimpleStorageService } from './simpleStorageService';
 
 export class FileService {
 	private readonly fileRepository;
 
-	constructor(fileRepository: FileRepository) {
+	private readonly simpleStorageService;
+
+	constructor(
+		fileRepository: FileRepository,
+		simpleStorageService: SimpleStorageService
+	) {
 		this.fileRepository = fileRepository;
+		this.simpleStorageService = simpleStorageService;
 	}
 
 	async getFiles(): Promise<File[]> {
@@ -43,24 +50,30 @@ export class FileService {
 		this.validateVideoFormat(videoFile.filename);
 
 		logger.info('[FILE SERVICE] Creating file...');
+
+		const videoUrl = await this.simpleStorageService.uploadVideo(
+			file.userId,
+			videoFile
+		);
+
 		const fileToCreate: File = {
 			userId: file.userId,
-			videoUrl: null,
+			videoUrl,
 			imagesCompressedUrl: null,
 			status: 'initialized',
 			createdAt: new Date(),
 			updatedAt: new Date(),
 		};
 
-		const createdFile: File = await this.fileRepository.createFile(
-			fileToCreate
-		);
+		// const createdFile: File = await this.fileRepository.createFile(
+		// 	fileToCreate
+		// );
 		logger.info('[FILE SERVICE] File created');
 
 		logger.info('[FILE SERVICE] Requesting hackaton-converter...');
 		// Chamar o hackaton-converter enviando o videoUrl e o userId
 
-		return createdFile;
+		return fileToCreate;
 	}
 
 	async updateFile(fileParams: UpdateFileParams): Promise<File> {

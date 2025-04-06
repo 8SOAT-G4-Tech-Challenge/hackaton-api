@@ -3,13 +3,18 @@ import { FastifyInstance } from 'fastify';
 import { FileService, NotificationService } from '@application/services';
 import { FileRepositoryImpl, NotificationRepositoryImpl } from '@driven/infra';
 import { FileController, NotificationController } from '@driver/controllers';
+import { AwsSimpleStorageImpl } from '@src/adapter/driven/infra/awsSimpleStorageImpl';
+import { SimpleStorageService } from '@src/core/application/services/simpleStorageService';
 
 import { authMiddleware } from '../middlewares/auth';
 
 const fileRepository = new FileRepositoryImpl();
 const notificationRepository = new NotificationRepositoryImpl();
 
-const fileService = new FileService(fileRepository);
+const awsSimpleStorageImpl = new AwsSimpleStorageImpl();
+const simpleStorageService = new SimpleStorageService(awsSimpleStorageImpl);
+
+const fileService = new FileService(fileRepository, simpleStorageService);
 const notificationService = new NotificationService(notificationRepository);
 
 const fileController = new FileController(fileService);

@@ -34,7 +34,12 @@ export async function authMiddleware(
 	request: FastifyRequest,
 	reply: FastifyReply
 ) {
-	const token = request.headers.authorization?.replace('Bearer ', '') || '';
+	const token =
+		request.headers.authorization?.replace('Bearer', '').trim() || '';
+
+	if (!token) {
+		return reply.status(401).send({ message: 'Unauthorized' });
+	}
 
 	const cacheKey = `user:${token}`;
 
@@ -45,11 +50,7 @@ export async function authMiddleware(
 		userCache.set(cacheKey, userData);
 	}
 
-	if (!token) {
-		return reply.status(401).send({ message: 'Unauthorized' });
-	}
-
-	request.user = JSON.parse(String(userData));
+	request.user = JSON.parse(userData as any);
 
 	return userData;
 }
