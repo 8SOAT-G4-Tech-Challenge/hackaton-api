@@ -1,3 +1,6 @@
+import * as fs from 'fs';
+import path from 'path';
+
 import {
 	S3Client,
 	PutObjectCommand,
@@ -29,26 +32,45 @@ export class AwsSimpleStorageImpl implements AwsSimpleStorage {
 		};
 	}
 
-	async uploadFile(
-		userId: string,
-		key: string,
-		file: MultipartFile
-	): Promise<void> {
+	async uploadFile(bucketKey: string, file: MultipartFile): Promise<void> {
+		const fileTest = await this.saveMultipartToTmp(file);
+
 		const client = new S3Client({ region: process.env.AWS_REGION });
 		const bucket = process.env.AWS_BUCKET;
 
+		const fileContent = fs.readFileSync(fileTest.path);
+
 		const input = {
 			Bucket: bucket,
-			Key: `${userId}/videos/${key}`,
-			Body: file.file,
+			Key: bucketKey,
+			Body: fileContent,
 			ContentType: file.mimetype,
+			ContentLength: fileTest.size,
 		};
 
 		logger.info(
-			`[BUCKET SERVICE] Uploading file ${key} to AWS bucket ${bucket}: ${key}`
+			`[BUCKET SERVICE] Uploading file ${file.filename} to AWS bucket ${bucket}: ${bucketKey}`
 		);
 		const command = new PutObjectCommand(input);
 		await client.send(command);
-		logger.info(`[BUCKET SERVICE] Successfully uploaded file ${key}`);
+		logger.info(`[BUCKET SERVICE] Successfully uploaded file ${bucketKey}`);
+	}
+
+	private async saveMultipartToTmp(file: MultipartFile) {
+		const tmpPath = path.join('/tmp', file.filename);
+		const writeStream = fs.createWriteStream(tmpPath);
+
+		await new Promise((resolve, reject) => {
+			file.file.pipe(writeStream);
+			file.file.on('end', resolve);
+			file.file.on('error', reject);
+		});
+
+		const stats = await fs.promises.stat(tmpPath);
+
+		return {
+			path: tmpPath,
+			size: stats.size,
+		};
 	}
 }

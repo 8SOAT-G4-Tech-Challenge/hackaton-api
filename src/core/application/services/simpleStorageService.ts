@@ -21,7 +21,7 @@ export class SimpleStorageService {
 		const timestamp = new Date().getTime();
 		const bucketKey = `${userId}/videos/${timestamp}_${videoFile.filename}`;
 
-		await this.awsSimpleStorage.uploadFile(userId, bucketKey, videoFile);
+		await this.awsSimpleStorage.uploadFile(bucketKey, videoFile);
 
 		return bucketKey;
 	}
