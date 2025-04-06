@@ -1,9 +1,12 @@
 import logger from '@src/core/common/logger';
+import {
+	ERROR_MESSAGE,
+	PROCESSED_MESSAGE,
+} from '@src/core/domain/constants/messages';
 import { Notification } from '@src/core/domain/models/notification';
-import { CreateNotificationParams } from './../ports/input/notification';
 
-import { ERROR_MESSAGE, PROCESSED_MESSAGE } from '@src/core/domain/constants/messages';
 import { InvalidNotificationException } from '../exceptions/invalidNotificationException';
+import { CreateNotificationParams } from '../ports/input/notification';
 import { NotificationRepository } from '../ports/repository/notificationRepository';
 import { SmsService } from './smsService';
 
@@ -12,7 +15,10 @@ export class NotificationService {
 
 	private readonly smsService;
 
-	constructor(notificationRepository: NotificationRepository, smsService: SmsService) {
+	constructor(
+		notificationRepository: NotificationRepository,
+		smsService: SmsService
+	) {
 		this.notificationRepository = notificationRepository;
 		this.smsService = smsService;
 	}
@@ -38,34 +44,51 @@ export class NotificationService {
 		return notifications;
 	}
 
-	async createNotification(createNotificationParams: CreateNotificationParams): Promise<Notification> {
+	async createNotification(
+		createNotificationParams: CreateNotificationParams
+	): Promise<Notification> {
 		logger.info('[NOTIFICATION SERVICE] Creating notification...');
 
 		if (!createNotificationParams.fileId) {
-			throw new InvalidNotificationException(`fileId ${createNotificationParams.fileId} não é válido.`);
+			throw new InvalidNotificationException(
+				`fileId ${createNotificationParams.fileId} não é válido.`
+			);
 		}
 
-		if (createNotificationParams.fileStatus == 'processed' && !createNotificationParams.imagesCompressedUrl) {
-			throw new InvalidNotificationException(`imagesCompressedUrl ${createNotificationParams.imagesCompressedUrl} não é válido.`);
+		if (
+			createNotificationParams.fileStatus === 'processed' &&
+			!createNotificationParams.imagesCompressedUrl
+		) {
+			throw new InvalidNotificationException(
+				`imagesCompressedUrl ${createNotificationParams.imagesCompressedUrl} não é válido.`
+			);
 		}
 
-		const text = createNotificationParams.fileStatus === 'processed'
-			? PROCESSED_MESSAGE(createNotificationParams.imagesCompressedUrl!)
-			: ERROR_MESSAGE
+		const text =
+			createNotificationParams.fileStatus === 'processed'
+				? PROCESSED_MESSAGE(createNotificationParams.imagesCompressedUrl!)
+				: ERROR_MESSAGE;
 
 		const notification: Notification = {
 			userId: createNotificationParams.userId,
 			fileId: createNotificationParams.fileId,
-			notificationType: createNotificationParams.fileStatus === 'processed' ? 'success' : 'error',
-			text: text,
+			notificationType:
+				createNotificationParams.fileStatus === 'processed'
+					? 'success'
+					: 'error',
+			text,
 			createdAt: new Date(),
 		};
 
-		const notificationCreated = await this.notificationRepository.createNotification(notification);
+		const notificationCreated =
+			await this.notificationRepository.createNotification(notification);
 
 		if (createNotificationParams.userPhoneNumber) {
 			try {
-				await this.smsService.sendSms(createNotificationParams.userPhoneNumber, text);
+				await this.smsService.sendSms(
+					createNotificationParams.userPhoneNumber,
+					text
+				);
 			} catch (error) {
 				logger.error(`[NOTIFICATION SERVICE] Erro ao enviar SMS: ${error}`);
 			}
