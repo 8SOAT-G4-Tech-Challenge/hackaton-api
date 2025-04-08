@@ -9,7 +9,7 @@ import { AwsSimpleQueueImpl } from '@driven/infra/awsSimpleQueueImpl';
 import { AwsSimpleStorageImpl } from '@driven/infra/awsSimpleStorageImpl';
 import { FileController, NotificationController } from '@driver/controllers';
 
-import { authMiddleware } from '../middlewares/auth';
+import { userMiddleware } from '../middlewares/user';
 
 const fileRepository = new FileRepositoryImpl();
 const notificationRepository = new NotificationRepositoryImpl();
@@ -37,13 +37,13 @@ const fileController = new FileController(fileService);
 const notificationController = new NotificationController(notificationService);
 
 export const routes = async (fastify: FastifyInstance) => {
-	// External (pode passar authMiddleware)
+	// External (pode passar userMiddleware)
 	fastify.get('/health', async (_request, reply) => {
 		reply.status(200).send({ message: 'Health Check - Ok' });
 	});
 	fastify.post(
 		'/upload',
-		{ preHandler: authMiddleware },
+		{ preHandler: userMiddleware },
 		fileController.createFile.bind(fileController)
 	);
 	fastify.get(
@@ -51,7 +51,7 @@ export const routes = async (fastify: FastifyInstance) => {
 		fileController.getSignedUrl.bind(fileController)
 	);
 
-	// Internal (não pode passar authMiddleware)
+	// Internal (não pode passar userMiddleware)
 	fastify.put('/:fileId', fileController.updateFile.bind(fileController));
 
 	// Não mexi
