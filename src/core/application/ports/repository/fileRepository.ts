@@ -7,5 +7,5 @@ export interface FileRepository {
 	getFileByUserIdOrThrow(id: string): Promise<File>;
 	getFilesByUserId(id: string): Promise<File[]>;
 	createFile(file: File): Promise<File>;
-	updateFile(file: File): Promise<File>;
+	updateFile(file: Partial<File>): Promise<File>;
 }

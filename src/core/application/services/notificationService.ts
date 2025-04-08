@@ -1,14 +1,30 @@
-import logger from '@src/core/common/logger';
-import {
-	ERROR_MESSAGE,
-	PROCESSED_MESSAGE,
-} from '@src/core/domain/constants/messages';
-import { Notification } from '@src/core/domain/models/notification';
+import { StatusEnum } from '@application/enumerations/statusEnum';
+import { NotificationTypeEnum } from '@application/enumerations/typeEnum';
+import logger from '@common/logger';
+import { ERROR_MESSAGE, PROCESSING_MESSAGE } from '@domain/constants/messages';
+import { Notification } from '@domain/models/notification';
+import { InvalidNotificationException } from '@exceptions/invalidNotificationException';
+import { CreateNotificationParams } from '@ports/input/notification';
+import { NotificationRepository } from '@ports/repository/notificationRepository';
+import { StatusType } from '@src/core/domain/types/statusType';
 
-import { InvalidNotificationException } from '../exceptions/invalidNotificationException';
-import { CreateNotificationParams } from '../ports/input/notification';
-import { NotificationRepository } from '../ports/repository/notificationRepository';
 import { SmsService } from './smsService';
+
+const getSmsMessage = (status: StatusType, fileId: string) => {
+	if (status === StatusEnum.processed) {
+		return `${process.env.AWS_API_URL}/files/download/${fileId}`;
+	}
+
+	if (status === StatusEnum.processing) {
+		return PROCESSING_MESSAGE;
+	}
+
+	if (status === StatusEnum.error) {
+		return ERROR_MESSAGE;
+	}
+
+	return '';
+};
 
 export class NotificationService {
 	private readonly notificationRepository;
@@ -47,7 +63,7 @@ export class NotificationService {
 	async createNotification(
 		createNotificationParams: CreateNotificationParams
 	): Promise<Notification> {
-		logger.info('[NOTIFICATION SERVICE] Creating notification...');
+		logger.info('[NOTIFICATION SERVICE] Sending notification');
 
 		if (!createNotificationParams.fileId) {
 			throw new InvalidNotificationException(
@@ -56,7 +72,7 @@ export class NotificationService {
 		}
 
 		if (
-			createNotificationParams.fileStatus === 'processed' &&
+			createNotificationParams.fileStatus === StatusEnum.processed &&
 			!createNotificationParams.imagesCompressedUrl
 		) {
 			throw new InvalidNotificationException(
@@ -64,18 +80,25 @@ export class NotificationService {
 			);
 		}
 
-		const text =
-			createNotificationParams.fileStatus === 'processed'
-				? PROCESSED_MESSAGE(createNotificationParams.imagesCompressedUrl!)
-				: ERROR_MESSAGE;
+		const text = getSmsMessage(
+			createNotificationParams.fileStatus,
+			createNotificationParams?.fileId || ''
+		);
+
+		const successStatuses: StatusType[] = [
+			StatusEnum.processed,
+			StatusEnum.processing,
+			StatusEnum.initialized,
+		];
 
 		const notification: Notification = {
 			userId: createNotificationParams.userId,
 			fileId: createNotificationParams.fileId,
-			notificationType:
-				createNotificationParams.fileStatus === 'processed'
-					? 'success'
-					: 'error',
+			notificationType: successStatuses.includes(
+				createNotificationParams.fileStatus
+			)
+				? NotificationTypeEnum.success
+				: NotificationTypeEnum.error,
 			text,
 			createdAt: new Date(),
 		};

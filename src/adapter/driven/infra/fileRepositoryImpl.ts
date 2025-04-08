@@ -1,7 +1,7 @@
 import { prisma } from '@driven/infra/lib/prisma';
+import { InvalidFileException } from '@exceptions/invalidFileException';
+import { File } from '@models/file';
 import { FileRepository } from '@ports/repository/fileRepository';
-import { InvalidFileException } from '@src/core/application/exceptions/invalidFileException';
-import { File } from '@src/core/domain/models/file';
 
 export class FileRepositoryImpl implements FileRepository {
 	async getFiles(): Promise<File[]> {
@@ -83,16 +83,16 @@ export class FileRepositoryImpl implements FileRepository {
 
 	async createFile(file: File): Promise<File> {
 		const createdFile = await prisma.file.create({
-			data: file,
+			data: { ...file, videoUrl: file?.videoUrl || '' },
 		});
 
 		return createdFile;
 	}
 
-	async updateFile(file: File): Promise<File> {
+	async updateFile(file: Partial<File>): Promise<File> {
 		const updatedFile = await prisma.file.update({
 			where: { id: file.id },
-			data: file,
+			data: { ...file, videoUrl: file?.videoUrl || '' },
 		});
 
 		return updatedFile;

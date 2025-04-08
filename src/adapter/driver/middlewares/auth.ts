@@ -1,31 +1,25 @@
+import axios from 'axios';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import NodeCache from 'node-cache';
 
-import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
-
 const userCache = new NodeCache({ stdTTL: 300 });
 
-const lambdaClient = new LambdaClient({ region: process.env.AWS_REGION });
+const api = axios.create({
+	baseURL: process.env.AWS_API_URL,
+});
 
-const getUserDataFromLambda = async (token: string, reply: FastifyReply) => {
-	const command = new InvokeCommand({
-		FunctionName: process.env.AWS_AUTH_LAMBDA,
-		Payload: Buffer.from(JSON.stringify({ accessToken: token })),
+export const getUserData = async (token: string, reply: FastifyReply) => {
+	const response = await api.get('/user-data', {
+		headers: {
+			Authorization: token,
+		},
 	});
 
-	const response = await lambdaClient.send(command);
-
-	if (!response.Payload) {
+	if (!response.data) {
 		return reply.status(404).send({ message: 'Not Found' });
 	}
 
-	const responseData = JSON.parse(Buffer.from(response.Payload).toString());
-
-	if (response.FunctionError || responseData.statusCode === 500) {
-		return reply.status(401).send({ message: 'Token expired' });
-	}
-
-	return responseData.body;
+	return response.data;
 };
 
 export async function authMiddleware(
@@ -44,11 +38,11 @@ export async function authMiddleware(
 	let userData = userCache.get(cacheKey);
 
 	if (!userData) {
-		userData = await getUserDataFromLambda(token, reply);
+		userData = await getUserData(token, reply);
 		userCache.set(cacheKey, userData);
 	}
 
-	request.user = JSON.parse(userData as any);
+	request.user = userData as any;
 
 	return userData;
 }

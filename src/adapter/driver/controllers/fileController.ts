@@ -76,19 +76,30 @@ export class FileController {
 	}
 
 	async updateFile(
-		req: FastifyRequest<{ Body: UpdateFileParams }>,
+		req: FastifyRequest<{ Params: { fileId: string }; Body: UpdateFileParams }>,
 		reply: FastifyReply
 	) {
 		try {
 			logger.info('[FILE CONTROLLER] Updating file...');
-
-			const updateFileParams: UpdateFileParams = {
+			const file: File = await this.fileService.updateFile({
 				...req.body,
-				userPhoneNumber: req.user.phoneNumber,
-			};
-
-			const file: File = await this.fileService.updateFile(updateFileParams);
+				id: req.params.fileId,
+			});
 			reply.code(StatusCodes.OK).send(file);
+		} catch (error) {
+			handleError(req, reply, error);
+		}
+	}
+
+	async getSignedUrl(
+		req: FastifyRequest<{ Params: { fileId: string } }>,
+		reply: FastifyReply
+	) {
+		try {
+			logger.info('[FILE CONTROLLER] Updating file...');
+			const signedUrl = await this.fileService.getSignedUrl(req.params.fileId);
+
+			reply.redirect(signedUrl);
 		} catch (error) {
 			handleError(req, reply, error);
 		}
