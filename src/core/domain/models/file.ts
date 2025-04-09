@@ -5,6 +5,7 @@ export interface File {
 	userId: string;
 	videoUrl?: string | null;
 	imagesCompressedUrl?: string | null;
+	screenshotsTime: number;
 	status: StatusType;
 	createdAt: Date;
 	updatedAt: Date;

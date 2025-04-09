@@ -34,6 +34,7 @@ model File {
 	imagesCompressedUrl String? @db.VarChar(255) @map("images_compressed_url")
 	createdAt			DateTime @default(now()) @map("created_at")
 	updatedAt 			DateTime @updatedAt @map("updated_at")
+	screenshotsTime Decimal @db.Decimal() @map("screenshots_time")
 
 	notifications		Notification[] @relation("FileToNotification")
 

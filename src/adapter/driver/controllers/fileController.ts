@@ -65,8 +65,13 @@ export class FileController {
 		try {
 			logger.info('[FILE CONTROLLER] Creating file...');
 			const videoFile = await req.file();
+
+			const screenshotsTimeHeader = req.headers['x-screenshots-time'];
+
+			const screenshotsTime = Number(screenshotsTimeHeader) || 30;
+
 			const file: File = await this.fileService.createFile(
-				{ userId: req.user.id },
+				{ userId: req.user.id, screenshotsTime },
 				videoFile
 			);
 			reply.code(StatusCodes.OK).send(file);

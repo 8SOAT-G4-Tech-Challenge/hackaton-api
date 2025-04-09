@@ -22,6 +22,10 @@ export class FileService {
 
 	private readonly notificationService;
 
+	private minimumScreenshotsTime = 0.1;
+
+	private maximumScreenshotsTime = 30;
+
 	constructor(
 		fileRepository: FileRepository,
 		simpleStorageService: SimpleStorageService,
@@ -89,6 +93,18 @@ export class FileService {
 			throw new InvalidFileException('videoFile não é válido.');
 		}
 
+		if (
+			createFileParams.screenshotsTime < this.minimumScreenshotsTime ||
+			createFileParams.screenshotsTime > this.maximumScreenshotsTime
+		) {
+			logger.info(
+				`[FILE SERVICE] screenshotsTime inválido: ${createFileParams.screenshotsTime}`
+			);
+			throw new InvalidFileException(
+				`Screenshot Time deve ser entre ${this.minimumScreenshotsTime} e ${this.maximumScreenshotsTime} segundos`
+			);
+		}
+
 		this.validateVideoFormat(videoFile.filename);
 
 		logger.info('[FILE SERVICE] Uploading video...');
@@ -103,6 +119,7 @@ export class FileService {
 			videoUrl,
 			imagesCompressedUrl: null,
 			status: 'initialized',
+			screenshotsTime: createFileParams.screenshotsTime,
 			createdAt: new Date(),
 			updatedAt: new Date(),
 		};
@@ -116,6 +133,7 @@ export class FileService {
 			fileStorageKey: videoUrl || '',
 			userId: createFileParams.userId,
 			fileId: createdFile?.id || '',
+			screenshotsTime: createFileParams.screenshotsTime,
 		});
 
 		return fileToCreate;
@@ -139,11 +157,6 @@ export class FileService {
 
 		logger.info('[FILE SERVICE] File updated successfully');
 		const user = await this.getUserInternal(updateFileParams.userId);
-
-		// const signedUrl = await this.simpleStorageService.getSignedUrl(
-		// 	`${updateFileParams.userId}/images/${fileUpdated?.imagesCompressedUrl}`,
-		// 	updateFileParams.status
-		// );
 
 		const createNotificationParams: CreateNotificationParams = {
 			userId: existingFile.userId,
