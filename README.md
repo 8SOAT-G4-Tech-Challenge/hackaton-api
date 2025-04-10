@@ -6,6 +6,18 @@ O projeto **Hackaton** é uma solução para processamento de vídeos que permit
 
 A solução está dividida em três repositórios distintos, cada um com uma responsabilidade específica, seguindo princípios de arquitetura de microsserviços e infraestrutura como código.
 
+### Preparando o ambiente
+- Infraestrutura:
+		** Alterações necessárias**:
+		- Dentro da pasta environments/dev adicionar as variáveis necessárias no arquivo terraform.tfvars conforme arquivo de exemplo
+		- Alterar a variável "project_name para "hackaton-<adicionar algo aqui>"
+		- No arquivo backend.tf, alterar o valor da propriedade bucket = "dev-hackaton-g4-terraform-state-<adicionar-algo-aqui>"
+		- Voltar para raiz do projeto e acessar o arquivo scripts/create_bucket_and_init.sh e alterar a propriedade BUCKET_NAME="$1-hackaton-g4-terraform-state-<adicionar-algo-aqui>"
+		- Dentro da pasta environments/dev rodar o comando `./terraform-init.sh init`
+		- Em seguida, rode o comando `terraform apply -auto-approve`
+		- Após conclusão do Terraform, acesse o console da AWS -> RDS e copie o endpoint do banco de dados Postgres
+		- No repositório hackaton-api, altere as variáveis de ambiente adicionando o novo endpoint e as chaves de acesso a conta da AWS e rode o comando `npx prisma migrate deploy` para criar as tabelas do banco de dados.
+		- No console da AWS, acesso o serviço SNS e cadastre e valide seu TELEFONE em Simple Notification Service -> Mobile/Text messaging (SMS)
 
 ## Arquitetura do Sistema
 
