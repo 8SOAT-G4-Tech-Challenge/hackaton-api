@@ -33,7 +33,7 @@ jobs:
           DB_ENDPOINT=$(aws rds describe-db-instances --db-instance-identifier ${DB_IDENTIFIER} --query 'DBInstances[0].Endpoint.Address' --output text)
           DB_PORT=$(aws rds describe-db-instances --db-instance-identifier ${DB_IDENTIFIER} --query 'DBInstances[0].Endpoint.Port' --output text)
           DB_USERNAME=$(aws rds describe-db-instances --db-instance-identifier ${DB_IDENTIFIER} --query 'DBInstances[0].MasterUsername' --output text)
-          DB_PASSWORD=${{ secrets.TF_VAR_pg_main_password }}
+          DB_PASSWORD=${{ secrets.PG_MAIN_PASSWORD }}
           echo "DATABASE_URL=postgresql://${DB_USERNAME}:${DB_PASSWORD}@${DB_ENDPOINT}:${DB_PORT}/hackaton?schema=public" >> $GITHUB_ENV
       - name: Setup Node.js
         uses: actions/setup-node@v3
