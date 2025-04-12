@@ -66,12 +66,6 @@ export class FileService {
 		};
 	}
 
-	async getFiles(): Promise<File[]> {
-		logger.info('[FILE SERVICE] Listing files');
-		const files: File[] = await this.fileRepository.getFiles();
-		return files;
-	}
-
 	async getFileById(id: string): Promise<File | null> {
 		logger.info(`[FILE SERVICE] Listing file by ID: ${id}`);
 		const file: File | null = await this.fileRepository.getFileById(id);
@@ -181,6 +175,12 @@ export class FileService {
 		);
 
 		return signedUrl;
+	}
+
+	async deleteFile(fileId: string): Promise<void> {
+		logger.info(`[FILE SERVICE] Deleting file ${fileId}`);
+
+		await this.fileRepository.deleteFile(fileId);
 	}
 
 	private validateVideoFormat(fileName: string): void {

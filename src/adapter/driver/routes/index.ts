@@ -37,10 +37,11 @@ const fileController = new FileController(fileService);
 const notificationController = new NotificationController(notificationService);
 
 export const routes = async (fastify: FastifyInstance) => {
-	// External (pode passar userMiddleware)
 	fastify.get('/health', async (_request, reply) => {
 		reply.status(200).send({ message: 'Health Check - Ok' });
 	});
+
+	// Rotas API Gateway
 	fastify.post(
 		'/upload',
 		{ preHandler: userMiddleware },
@@ -50,27 +51,23 @@ export const routes = async (fastify: FastifyInstance) => {
 		'/download/:fileId',
 		fileController.getSignedUrl.bind(fileController)
 	);
-
-	// Internal (não pode passar userMiddleware)
-	fastify.put('/:fileId', fileController.updateFile.bind(fileController));
-
-	// Não mexi
-	fastify.get('/', fileController.getFiles.bind(fileController));
 	fastify.get('/:id', fileController.getFileById.bind(fileController));
 	fastify.get(
-		'/users/:userId',
+		'/user',
+		{ preHandler: userMiddleware },
 		fileController.getFilesByUserId.bind(fileController)
 	);
 	fastify.get(
-		'/notifications',
-		notificationController.getNotifications.bind(notificationController)
-	);
-	fastify.get(
-		'/notifications/:id',
+		'/notification/:id',
 		notificationController.getNotificationById.bind(notificationController)
 	);
 	fastify.get(
-		'/users/:userId/notifications',
+		'/notification/user',
+		{ preHandler: userMiddleware },
 		notificationController.getNotificationsByUserId.bind(notificationController)
 	);
+	fastify.delete('/:fileId', fileController.deleteFile.bind(fileController));
+
+	// Internal
+	fastify.put('/:fileId', fileController.updateFile.bind(fileController));
 };
