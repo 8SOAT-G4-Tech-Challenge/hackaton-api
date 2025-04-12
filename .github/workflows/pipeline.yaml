@@ -1,0 +1,55 @@
+name: CI - AWS RUN Migrations on RDS
+
+on:
+  workflow_dispatch:
+    inputs:
+      deployType:
+        description: 'Deploy type'
+        type: choice
+        options:
+          - deploy
+        required: true
+
+jobs:
+  migrations:
+    name: 'Run Migrations'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Get hackaton-api RDS Endpoint
+        run: |
+          DB_IDENTIFIER="${{ vars.TF_VAR_pg_main_database }}"
+          # Verificar se o comando retorna resultados
+          if ! DB_INFO=$(aws rds describe-db-instances --db-instance-identifier ${DB_IDENTIFIER} 2>/dev/null); then
+            echo "Erro ao buscar informações do banco de dados: ${DB_IDENTIFIER}"
+            exit 1
+          fi
+
+          DB_ENDPOINT=$(aws rds describe-db-instances --db-instance-identifier ${DB_IDENTIFIER} --query 'DBInstances[0].Endpoint.Address' --output text)
+          DB_PORT=$(aws rds describe-db-instances --db-instance-identifier ${DB_IDENTIFIER} --query 'DBInstances[0].Endpoint.Port' --output text)
+          DB_USERNAME=$(aws rds describe-db-instances --db-instance-identifier ${DB_IDENTIFIER} --query 'DBInstances[0].MasterUsername' --output text)
+          DB_PASSWORD=${{ secrets.TF_VAR_pg_main_password }}
+          echo "DATABASE_URL=postgresql://${DB_USERNAME}:${DB_PASSWORD}@${DB_ENDPOINT}:${DB_PORT}/hackaton?schema=public" >> $GITHUB_ENV
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run migrations
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL }}
+        run: npx prisma migrate deploy
