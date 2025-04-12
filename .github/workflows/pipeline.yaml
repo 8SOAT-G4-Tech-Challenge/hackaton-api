@@ -31,8 +31,8 @@ jobs:
         run: |
           DB_IDENTIFIER="${{ vars.PG_MAIN_DATABASE }}"
           # Verificar se o comando retorna resultados
-          if ! DB_INFO=$(aws rds describe-db-instances --db-instance-identifier ${DB_IDENTIFIER} 2>/dev/null); then
-            echo "Erro ao buscar informações do banco de dados: ${DB_IDENTIFIER}"
+          if ! DB_INFO=$(aws rds describe-db-instances --db-instance-identifier dev-${DB_IDENTIFIER} 2>/dev/null); then
+            echo "Erro ao buscar informações do banco de dados: dev-${DB_IDENTIFIER}"
             exit 1
           fi
 
