@@ -33,4 +33,10 @@ export class SimpleStorageService {
 
 		return this.awsSimpleStorage.getSignedUrl(key);
 	}
+
+	async deleteFile(key: string): Promise<void> {
+		logger.info(`[SIMPLE STORAGE SERVICE] Deleting file ${key}`);
+
+		await this.awsSimpleStorage.deleteFile(key);
+	}
 }

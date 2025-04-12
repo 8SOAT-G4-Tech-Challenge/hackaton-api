@@ -5,6 +5,7 @@ import {
 	S3Client,
 	PutObjectCommand,
 	GetObjectCommand,
+	DeleteObjectCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import logger from '@common/logger';
@@ -87,5 +88,17 @@ export class AwsSimpleStorageImpl implements AwsSimpleStorage {
 		);
 
 		return signedUrl;
+	}
+
+	async deleteFile(key: string): Promise<void> {
+		const bucket = process.env.AWS_BUCKET;
+
+		const input = {
+			Bucket: bucket,
+			Key: key,
+		};
+
+		const command = new DeleteObjectCommand(input);
+		await this.client.send(command);
 	}
 }

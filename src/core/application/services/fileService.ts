@@ -179,8 +179,23 @@ export class FileService {
 
 	async deleteFile(fileId: string): Promise<void> {
 		logger.info(`[FILE SERVICE] Deleting file ${fileId}`);
+		const file = await this.fileRepository.getFileById(fileId);
+
+		if (!file) throw new InvalidFileException('File not found');
 
 		await this.fileRepository.deleteFile(fileId);
+
+		logger.info(
+			`[FILE SERVICE] File deleted succesfully from database: ${fileId}`
+		);
+
+		await this.simpleStorageService.deleteFile(
+			`${file?.userId}/images/${file?.imagesCompressedUrl}`
+		);
+
+		logger.info(
+			`[FILE SERVICE] File deleted succesfully from bucket: ${fileId}`
+		);
 	}
 
 	private validateVideoFormat(fileName: string): void {
