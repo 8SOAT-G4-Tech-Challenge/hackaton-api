@@ -1,3 +1,7 @@
+import {
+	CognitoIdentityProviderClient,
+	ListUsersCommand,
+} from '@aws-sdk/client-cognito-identity-provider';
 import logger from '@common/logger';
 import { File } from '@domain/models/file';
 import { InvalidFileException } from '@exceptions/invalidFileException';
@@ -18,6 +22,10 @@ export class FileService {
 
 	private readonly notificationService;
 
+	private minimumScreenshotsTime = 0.1;
+
+	private maximumScreenshotsTime = 30;
+
 	constructor(
 		fileRepository: FileRepository,
 		simpleStorageService: SimpleStorageService,
@@ -28,6 +36,34 @@ export class FileService {
 		this.simpleStorageService = simpleStorageService;
 		this.simpleQueueService = simpleQueueService;
 		this.notificationService = notificationService;
+	}
+
+	private async getUserInternal(userId: string) {
+		const cognitoClient = new CognitoIdentityProviderClient({
+			region: process.env.AWS_REGION,
+		});
+
+		const command = new ListUsersCommand({
+			UserPoolId: process.env.USER_POOL_ID,
+			Filter: `sub = "${userId}"`,
+			Limit: 1,
+		});
+
+		const response = await cognitoClient.send(command);
+
+		if (!response.Users || response.Users.length === 0) {
+			throw new Error('Usuário não encontrado');
+		}
+
+		const user = response.Users[0];
+
+		return {
+			username: user.Username,
+			email: user.Attributes?.find((prop) => prop.Name === 'email')?.Value,
+			phoneNumber: user.Attributes?.find((prop) => prop.Name === 'phone_number')
+				?.Value,
+			id: user.Attributes?.find((prop) => prop.Name === 'sub')?.Value,
+		};
 	}
 
 	async getFiles(): Promise<File[]> {
@@ -57,6 +93,18 @@ export class FileService {
 			throw new InvalidFileException('videoFile não é válido.');
 		}
 
+		if (
+			createFileParams.screenshotsTime < this.minimumScreenshotsTime ||
+			createFileParams.screenshotsTime > this.maximumScreenshotsTime
+		) {
+			logger.info(
+				`[FILE SERVICE] screenshotsTime inválido: ${createFileParams.screenshotsTime}`
+			);
+			throw new InvalidFileException(
+				`Screenshot Time deve ser entre ${this.minimumScreenshotsTime} e ${this.maximumScreenshotsTime} segundos`
+			);
+		}
+
 		this.validateVideoFormat(videoFile.filename);
 
 		logger.info('[FILE SERVICE] Uploading video...');
@@ -71,11 +119,12 @@ export class FileService {
 			videoUrl,
 			imagesCompressedUrl: null,
 			status: 'initialized',
+			screenshotsTime: createFileParams.screenshotsTime,
 			createdAt: new Date(),
 			updatedAt: new Date(),
 		};
 
-		await this.fileRepository.createFile(fileToCreate);
+		const createdFile = await this.fileRepository.createFile(fileToCreate);
 
 		logger.info('[FILE SERVICE] File created');
 
@@ -83,34 +132,36 @@ export class FileService {
 			fileName: videoFile.filename,
 			fileStorageKey: videoUrl || '',
 			userId: createFileParams.userId,
+			fileId: createdFile?.id || '',
+			screenshotsTime: createFileParams.screenshotsTime,
 		});
 
 		return fileToCreate;
 	}
 
 	async updateFile(updateFileParams: UpdateFileParams): Promise<File> {
+		logger.info(`[FILE SERVICE] Getting file by id: ${updateFileParams.id}`);
 		const existingFile = await this.fileRepository.getFileByIdOrThrow(
 			updateFileParams.id
 		);
-		await this.fileRepository.getFileByUserIdOrThrow(updateFileParams.userId);
 
-		logger.info('[FILE SERVICE] Updating file...');
-		const fileToUpdate: File = {
-			id: existingFile.id,
-			userId: existingFile.userId,
-			videoUrl: existingFile.videoUrl,
-			createdAt: existingFile.createdAt,
-			imagesCompressedUrl: updateFileParams.compressedFileKey,
+		logger.info(`[FILE SERVICE] Updating file by id: ${updateFileParams.id}`);
+		const fileToUpdate: Partial<File> = {
+			id: updateFileParams.id,
+			imagesCompressedUrl: updateFileParams?.compressedFileKey || '',
 			status: updateFileParams.status,
 			updatedAt: new Date(),
 		};
 
 		const fileUpdated = await this.fileRepository.updateFile(fileToUpdate);
 
+		logger.info('[FILE SERVICE] File updated successfully');
+		const user = await this.getUserInternal(updateFileParams.userId);
+
 		const createNotificationParams: CreateNotificationParams = {
 			userId: existingFile.userId,
-			userPhoneNumber: updateFileParams.userPhoneNumber,
-			fileStatus: existingFile.status,
+			userPhoneNumber: user.phoneNumber || '',
+			fileStatus: updateFileParams.status,
 			fileId: existingFile.id,
 			imagesCompressedUrl: fileUpdated.imagesCompressedUrl,
 		};
@@ -118,6 +169,18 @@ export class FileService {
 		this.notificationService.createNotification(createNotificationParams);
 
 		return fileUpdated;
+	}
+
+	async getSignedUrl(fileId: string): Promise<string> {
+		logger.info(`[FILE SERVICE] Signing url for file ${fileId}`);
+
+		const file = await this.fileRepository.getFileById(fileId);
+
+		const signedUrl = await this.simpleStorageService.getSignedUrl(
+			`${file?.userId}/images/${file?.imagesCompressedUrl}`
+		);
+
+		return signedUrl;
 	}
 
 	private validateVideoFormat(fileName: string): void {

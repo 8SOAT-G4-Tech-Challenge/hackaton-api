@@ -25,4 +25,12 @@ export class SimpleStorageService {
 
 		return bucketKey;
 	}
+
+	async getSignedUrl(key: string): Promise<string> {
+		logger.info(
+			`[SIMPLE STORAGE SERVICE] Generating signed url for file ${key}`
+		);
+
+		return this.awsSimpleStorage.getSignedUrl(key);
+	}
 }

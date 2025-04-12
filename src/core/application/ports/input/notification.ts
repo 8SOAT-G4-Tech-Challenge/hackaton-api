@@ -1,4 +1,4 @@
-import { StatusType } from "@src/core/domain/types/statusType";
+import { StatusType } from '@src/core/domain/types/statusType';
 
 export type CreateNotificationParams = {
     userPhoneNumber: string;

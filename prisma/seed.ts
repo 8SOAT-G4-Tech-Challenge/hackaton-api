@@ -21,6 +21,7 @@ async function main() {
 				status: 'processed',
 				videoUrl: 'https://example.com/video1.mp4',
 				imagesCompressedUrl: 'https://example.com/images1.zip',
+				screenshotsTime: 30,
 			},
 			{
 				id: file2Id,
@@ -28,6 +29,7 @@ async function main() {
 				status: 'processing',
 				videoUrl: 'https://example.com/video2.mp4',
 				imagesCompressedUrl: 'https://example.com/images2.zip',
+				screenshotsTime: 30,
 			},
 			{
 				id: file3Id,
@@ -35,6 +37,7 @@ async function main() {
 				status: 'error',
 				videoUrl: 'https://example.com/video3.mp4',
 				imagesCompressedUrl: 'https://example.com/images3.zip',
+				screenshotsTime: 30,
 			},
 		],
 	});

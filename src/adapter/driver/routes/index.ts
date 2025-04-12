@@ -1,16 +1,15 @@
 import { FastifyInstance } from 'fastify';
 
 import { FileService, NotificationService } from '@application/services';
+import { SimpleQueueService } from '@application/services/simpleQueueService';
+import { SimpleStorageService } from '@application/services/simpleStorageService';
+import { SmsService } from '@application/services/smsService';
 import { FileRepositoryImpl, NotificationRepositoryImpl } from '@driven/infra';
+import { AwsSimpleQueueImpl } from '@driven/infra/awsSimpleQueueImpl';
+import { AwsSimpleStorageImpl } from '@driven/infra/awsSimpleStorageImpl';
 import { FileController, NotificationController } from '@driver/controllers';
-import { AwsSimpleQueueImpl } from '@src/adapter/driven/infra/awsSimpleQueueImpl';
-import { AwsSimpleStorageImpl } from '@src/adapter/driven/infra/awsSimpleStorageImpl';
-import { UpdateFileParams } from '@src/core/application/ports/input/file';
-import { SimpleQueueService } from '@src/core/application/services/simpleQueueService';
-import { SimpleStorageService } from '@src/core/application/services/simpleStorageService';
-import { SmsService } from '@src/core/application/services/smsService';
 
-import { authMiddleware } from '../middlewares/auth';
+import { userMiddleware } from '../middlewares/user';
 
 const fileRepository = new FileRepositoryImpl();
 const notificationRepository = new NotificationRepositoryImpl();
@@ -38,24 +37,29 @@ const fileController = new FileController(fileService);
 const notificationController = new NotificationController(notificationService);
 
 export const routes = async (fastify: FastifyInstance) => {
+	// External (pode passar userMiddleware)
 	fastify.get('/health', async (_request, reply) => {
 		reply.status(200).send({ message: 'Health Check - Ok' });
 	});
-	fastify.get('/files', fileController.getFiles.bind(fileController));
-	fastify.get('/files/:id', fileController.getFileById.bind(fileController));
-	fastify.get(
-		'/users/:userId/files',
-		fileController.getFilesByUserId.bind(fileController)
-	);
 	fastify.post(
-		'/files',
-		{ preHandler: authMiddleware },
+		'/upload',
+		{ preHandler: userMiddleware },
 		fileController.createFile.bind(fileController)
 	);
-	fastify.put<{ Body: UpdateFileParams }>(
-		'/files/:id',
-		{ preHandler: authMiddleware },
-		fileController.updateFile.bind(fileController)
+	fastify.get(
+		'/download/:fileId',
+		fileController.getSignedUrl.bind(fileController)
+	);
+
+	// Internal (não pode passar userMiddleware)
+	fastify.put('/:fileId', fileController.updateFile.bind(fileController));
+
+	// Não mexi
+	fastify.get('/', fileController.getFiles.bind(fileController));
+	fastify.get('/:id', fileController.getFileById.bind(fileController));
+	fastify.get(
+		'/users/:userId',
+		fileController.getFilesByUserId.bind(fileController)
 	);
 	fastify.get(
 		'/notifications',
