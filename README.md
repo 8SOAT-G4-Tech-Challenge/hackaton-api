@@ -154,7 +154,8 @@ A aplicação está configurada com:
 
 ### Testes
 
-TODO
+#### Testes Unitários - API Converter
+![unit_converter](./assets/images/unit_test_converter_api.png)
 
 ### Endpoints
 
