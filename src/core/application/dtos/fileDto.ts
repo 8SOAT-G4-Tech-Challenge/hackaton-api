@@ -13,7 +13,9 @@ type PrismaFile = {
 	updatedAt: Date;
 };
 
-export function toFileDTO(prismaFile: PrismaFile): File {
+export function toFileDTO(prismaFile: PrismaFile): File | undefined {
+	if (!prismaFile) return undefined;
+
 	return {
 		...prismaFile,
 		screenshotsTime: prismaFile?.screenshotsTime?.toNumber(),
