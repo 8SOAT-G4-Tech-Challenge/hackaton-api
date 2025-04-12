@@ -13,17 +13,6 @@ export class NotificationController {
 		this.notificationService = notificationService;
 	}
 
-	async getNotifications(req: FastifyRequest, reply: FastifyReply) {
-		try {
-			logger.info('[NOTIFICATION CONTROLLER] Listing notifications');
-			const notifications: Notification[] =
-				await this.notificationService.getNotifications();
-			reply.code(StatusCodes.OK).send(notifications);
-		} catch (error) {
-			handleError(req, reply, error);
-		}
-	}
-
 	async getNotificationById(
 		req: FastifyRequest<{ Params: { id: string } }>,
 		reply: FastifyReply
@@ -50,12 +39,9 @@ export class NotificationController {
 		}
 	}
 
-	async getNotificationsByUserId(
-		req: FastifyRequest<{ Params: { userId: string } }>,
-		reply: FastifyReply
-	) {
+	async getNotificationsByUserId(req: FastifyRequest, reply: FastifyReply) {
 		try {
-			const { userId } = req.params;
+			const userId = req.user.id;
 			logger.info(
 				`[NOTIFICATION CONTROLLER] Listing notifications by user ID: ${userId}`
 			);

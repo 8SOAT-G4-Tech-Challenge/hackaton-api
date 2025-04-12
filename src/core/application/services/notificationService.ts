@@ -39,13 +39,6 @@ export class NotificationService {
 		this.smsService = smsService;
 	}
 
-	async getNotifications(): Promise<Notification[]> {
-		logger.info('[NOTIFICATION SERVICE] Listing files');
-		const notifications: Notification[] =
-			await this.notificationRepository.getNotifications();
-		return notifications;
-	}
-
 	async getNotificationById(id: string): Promise<Notification | null> {
 		logger.info(`[NOTIFICATION SERVICE] Listing file by ID: ${id}`);
 		const notification: Notification | null =

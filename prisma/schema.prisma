@@ -49,7 +49,7 @@ model Notification {
   text       String   @db.VarChar(5000)  @map("text")
   createdAt  DateTime @default(now())   @map("created_at")
 
-  file       File     @relation(fields: [fileId], references: [id], name: "FileToNotification")
+  file       File     @relation(fields: [fileId], references: [id], name: "FileToNotification", onDelete: Cascade)
 
   @@map("notification")
 }
