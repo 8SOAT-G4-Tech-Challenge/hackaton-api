@@ -14,16 +14,6 @@ export class FileController {
 		this.fileService = fileService;
 	}
 
-	async getFiles(req: FastifyRequest, reply: FastifyReply) {
-		try {
-			logger.info('[FILE CONTROLLER] Listing files');
-			const files: File[] = await this.fileService.getFiles();
-			reply.code(StatusCodes.OK).send(files);
-		} catch (error) {
-			handleError(req, reply, error);
-		}
-	}
-
 	async getFileById(
 		req: FastifyRequest<{ Params: { id: string } }>,
 		reply: FastifyReply
@@ -47,12 +37,9 @@ export class FileController {
 		}
 	}
 
-	async getFilesByUserId(
-		req: FastifyRequest<{ Params: { userId: string } }>,
-		reply: FastifyReply
-	) {
+	async getFilesByUserId(req: FastifyRequest, reply: FastifyReply) {
 		try {
-			const { userId } = req.params;
+			const userId = req.user.id;
 			logger.info(`[FILE CONTROLLER] Listing files by user ID: ${userId}`);
 			const files: File[] = await this.fileService.getFilesByUserId(userId);
 			reply.code(StatusCodes.OK).send(files);
@@ -65,8 +52,13 @@ export class FileController {
 		try {
 			logger.info('[FILE CONTROLLER] Creating file...');
 			const videoFile = await req.file();
+
+			const screenshotsTimeHeader = req.headers['x-screenshots-time'];
+
+			const screenshotsTime = Number(screenshotsTimeHeader) || 30;
+
 			const file: File = await this.fileService.createFile(
-				{ userId: req.user.id },
+				{ userId: req.user.id, screenshotsTime },
 				videoFile
 			);
 			reply.code(StatusCodes.OK).send(file);
@@ -76,19 +68,45 @@ export class FileController {
 	}
 
 	async updateFile(
-		req: FastifyRequest<{ Body: UpdateFileParams }>,
+		req: FastifyRequest<{ Params: { fileId: string }; Body: UpdateFileParams }>,
 		reply: FastifyReply
 	) {
 		try {
 			logger.info('[FILE CONTROLLER] Updating file...');
-
-			const updateFileParams: UpdateFileParams = {
+			const file: File = await this.fileService.updateFile({
 				...req.body,
-				userPhoneNumber: req.user.phoneNumber,
-			};
-
-			const file: File = await this.fileService.updateFile(updateFileParams);
+				id: req.params.fileId,
+			});
 			reply.code(StatusCodes.OK).send(file);
+		} catch (error) {
+			handleError(req, reply, error);
+		}
+	}
+
+	async getSignedUrl(
+		req: FastifyRequest<{ Params: { fileId: string } }>,
+		reply: FastifyReply
+	) {
+		try {
+			logger.info('[FILE CONTROLLER] Updating file...');
+			const signedUrl = await this.fileService.getSignedUrl(req.params.fileId);
+
+			reply.redirect(signedUrl);
+		} catch (error) {
+			handleError(req, reply, error);
+		}
+	}
+
+	async deleteFile(
+		req: FastifyRequest<{ Params: { fileId: string } }>,
+		reply: FastifyReply
+	) {
+		try {
+			const { fileId } = req.params;
+			logger.info(`[FILE CONTROLLER] Deleting file by Id: ${fileId}`);
+			await this.fileService.deleteFile(fileId);
+			logger.info(`[FILE CONTROLLER] File deleted successfully: ${fileId}`);
+			reply.code(StatusCodes.OK).send();
 		} catch (error) {
 			handleError(req, reply, error);
 		}

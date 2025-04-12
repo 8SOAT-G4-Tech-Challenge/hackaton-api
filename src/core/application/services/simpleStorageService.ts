@@ -21,8 +21,22 @@ export class SimpleStorageService {
 		const timestamp = new Date().getTime();
 		const bucketKey = `${userId}/videos/${timestamp}_${videoFile.filename}`;
 
-		await this.awsSimpleStorage.uploadFile(userId, bucketKey, videoFile);
+		await this.awsSimpleStorage.uploadFile(bucketKey, videoFile);
 
 		return bucketKey;
+	}
+
+	async getSignedUrl(key: string): Promise<string> {
+		logger.info(
+			`[SIMPLE STORAGE SERVICE] Generating signed url for file ${key}`
+		);
+
+		return this.awsSimpleStorage.getSignedUrl(key);
+	}
+
+	async deleteFile(key: string): Promise<void> {
+		logger.info(`[SIMPLE STORAGE SERVICE] Deleting file ${key}`);
+
+		await this.awsSimpleStorage.deleteFile(key);
 	}
 }

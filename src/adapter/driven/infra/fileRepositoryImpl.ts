@@ -1,40 +1,16 @@
+import { toFileDTO } from '@application/dtos/fileDto';
 import { prisma } from '@driven/infra/lib/prisma';
+import { InvalidFileException } from '@exceptions/invalidFileException';
+import { File } from '@models/file';
 import { FileRepository } from '@ports/repository/fileRepository';
-import { InvalidFileException } from '@src/core/application/exceptions/invalidFileException';
-import { File } from '@src/core/domain/models/file';
 
 export class FileRepositoryImpl implements FileRepository {
-	async getFiles(): Promise<File[]> {
-		const files = await prisma.file.findMany({
-			select: {
-				createdAt: true,
-				id: true,
-				imagesCompressedUrl: true,
-				status: true,
-				updatedAt: true,
-				userId: true,
-				videoUrl: true,
-			},
-		});
-
-		return files;
-	}
-
 	async getFileById(id: string): Promise<File | null> {
-		const file = await prisma.file.findUnique({
+		const file: any = await prisma.file.findUnique({
 			where: { id },
-			select: {
-				createdAt: true,
-				id: true,
-				imagesCompressedUrl: true,
-				status: true,
-				updatedAt: true,
-				userId: true,
-				videoUrl: true,
-			},
 		});
 
-		return file;
+		return toFileDTO(file);
 	}
 
 	async getFileByIdOrThrow(id: string): Promise<File> {
@@ -48,20 +24,11 @@ export class FileRepositoryImpl implements FileRepository {
 	}
 
 	async getFilesByUserId(userId: string): Promise<File[]> {
-		const files = await prisma.file.findMany({
+		const files: any[] = await prisma.file.findMany({
 			where: { userId },
-			select: {
-				createdAt: true,
-				id: true,
-				imagesCompressedUrl: true,
-				status: true,
-				updatedAt: true,
-				userId: true,
-				videoUrl: true,
-			},
 		});
 
-		return files;
+		return files.map(toFileDTO);
 	}
 
 	async getFileByUserIdOrThrow(userId: string): Promise<File> {
@@ -82,19 +49,25 @@ export class FileRepositoryImpl implements FileRepository {
 	}
 
 	async createFile(file: File): Promise<File> {
-		const createdFile = await prisma.file.create({
-			data: file,
+		const createdFile: any = await prisma.file.create({
+			data: { ...file, videoUrl: file?.videoUrl || '' },
 		});
 
-		return createdFile;
+		return toFileDTO(createdFile);
 	}
 
-	async updateFile(file: File): Promise<File> {
-		const updatedFile = await prisma.file.update({
+	async updateFile(file: Partial<File>): Promise<File> {
+		const updatedFile: any = await prisma.file.update({
 			where: { id: file.id },
-			data: file,
+			data: { ...file, videoUrl: file?.videoUrl || '' },
 		});
 
-		return updatedFile;
+		return toFileDTO(updatedFile);
+	}
+
+	async deleteFile(fileId: string): Promise<void> {
+		await prisma.file.delete({
+			where: { id: fileId },
+		});
 	}
 }

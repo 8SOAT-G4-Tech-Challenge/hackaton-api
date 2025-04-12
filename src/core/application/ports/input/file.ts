@@ -4,6 +4,7 @@ import { StatusType } from '@src/core/domain/types/statusType';
 export type MultipartFileBuffer = MultipartFile & { buffer: Buffer };
 
 export type CreateFileParams = {
+	screenshotsTime: number;
 	userId: string;
 };
 

@@ -7,8 +7,6 @@ import { errorHandler } from '@driver/errorHandler';
 import fastifyCors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import fastifyMultipart from '@fastify/multipart';
-import fastifySwagger from '@fastify/swagger';
-import fastifySwaggerUI from '@fastify/swagger-ui';
 import { routes } from '@routes/index';
 
 export const app = fastify({
@@ -17,25 +15,6 @@ export const app = fastify({
 
 app.register(fastifyCors, {
 	origin: '*',
-});
-
-app.register(fastifySwagger, {
-	openapi: {
-		openapi: '3.0.1',
-	},
-	swagger: {
-		consumes: ['application/json', 'multipart/form-data'],
-		produces: ['application/json', 'multipart/form-data'],
-		info: {
-			title: 'FIAP - Hackaton',
-			description: 'Especificações da API do Hackaton - FIAP Tech Challenge.',
-			version: '1.0.0',
-		},
-	},
-});
-
-app.register(fastifySwaggerUI, {
-	routePrefix: '/docs',
 });
 
 app.register(fastifyMultipart, {
@@ -63,7 +42,7 @@ app.register(helmet, {
 	noSniff: true,
 });
 
-app.register(routes);
+app.register(routes, { prefix: '/files' });
 
 app.setErrorHandler(errorHandler);
 
