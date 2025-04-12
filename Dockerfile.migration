@@ -9,11 +9,8 @@ RUN apk add --no-cache openssl
 COPY package.json package-lock.json ./
 COPY prisma ./prisma
 
-# Instala as dependências
-RUN npm install
-
-# Gera o Prisma Client
-RUN npx prisma generate
+# Instala as dependências e Gera o Prisma Client
+RUN npm install && npx prisma generate
 
 # Comando para executar as migrações
 CMD ["npx", "prisma", "migrate", "deploy"]
