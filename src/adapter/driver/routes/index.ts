@@ -53,7 +53,7 @@ export const routes = async (fastify: FastifyInstance) => {
 	);
 	fastify.get('/:id', fileController.getFileById.bind(fileController));
 	fastify.get(
-		'/user',
+		'/user/files',
 		{ preHandler: userMiddleware },
 		fileController.getFilesByUserId.bind(fileController)
 	);
@@ -62,7 +62,7 @@ export const routes = async (fastify: FastifyInstance) => {
 		notificationController.getNotificationById.bind(notificationController)
 	);
 	fastify.get(
-		'/notification/user',
+		'/user/notifications',
 		{ preHandler: userMiddleware },
 		notificationController.getNotificationsByUserId.bind(notificationController)
 	);
