@@ -99,18 +99,6 @@ export class FileService {
 			);
 		}
 
-		if (
-			createFileParams.screenshotsTime < this.minimumScreenshotsTime ||
-			createFileParams.screenshotsTime > this.maximumScreenshotsTime
-		) {
-			logger.info(
-				`[FILE SERVICE] screenshotsTime inválido: ${createFileParams.screenshotsTime}`
-			);
-			throw new InvalidFileException(
-				`Screenshot Time deve ser entre ${this.minimumScreenshotsTime} e ${this.maximumScreenshotsTime} segundos`
-			);
-		}
-
 		this.validateVideoFormat(videoFile.filename);
 
 		logger.info('[FILE SERVICE] Uploading video...');

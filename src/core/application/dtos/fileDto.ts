@@ -14,8 +14,6 @@ type PrismaFile = {
 };
 
 export function toFileDTO(prismaFile: PrismaFile): File {
-	if (!prismaFile) return {} as File;
-
 	return {
 		...prismaFile,
 		screenshotsTime: prismaFile?.screenshotsTime?.toNumber(),

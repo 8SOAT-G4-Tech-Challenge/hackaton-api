@@ -1,207 +1,279 @@
-jest.mock('@driven/infra/lib/prisma', () => ({
-    prisma: {
-        file: {
-            findUnique: jest.fn(),
-            findMany: jest.fn(),
-            findFirstOrThrow: jest.fn(),
-            create: jest.fn(),
-            update: jest.fn(),
-            delete: jest.fn(),
-        },
-    },
-}));
-
+import { toFileDTO } from '@application/dtos/fileDto';
 import { prisma } from '@driven/infra/lib/prisma';
 import { InvalidFileException } from '@exceptions/invalidFileException';
-import { toFileDTO } from '@application/dtos/fileDto';
-import { FileRepositoryImpl } from '@src/adapter/driven/infra';
-import { FileMockBuilder } from './../../../../mocks/file.mock-builder';
 import { Decimal } from '@prisma/client/runtime/library';
+import { FileRepositoryImpl } from '@src/adapter/driven/infra';
+import { StatusEnum } from '@src/core/application/enumerations/statusEnum';
+
+import { FileMockBuilder } from '../../../../mocks/file.mock-builder';
+
+jest.mock('@driven/infra/lib/prisma', () => ({
+	prisma: {
+		file: {
+			findUnique: jest.fn(),
+			findMany: jest.fn(),
+			findFirstOrThrow: jest.fn(),
+			create: jest.fn(),
+			update: jest.fn(),
+			delete: jest.fn(),
+		},
+	},
+}));
 
 describe('FileRepositoryImpl', () => {
-    let repository: FileRepositoryImpl;
+	let repository: FileRepositoryImpl;
 
-    beforeEach(() => {
-        repository = new FileRepositoryImpl();
-        jest.clearAllMocks();
-    });
+	beforeEach(() => {
+		repository = new FileRepositoryImpl();
+		jest.clearAllMocks();
+	});
 
-    describe('getFileById', () => {
-        it('should return a file when found', async () => {
-            const fileMock = new FileMockBuilder()
-                .withId('file-1')
-                .withUserId('user-1')
-                .build();
+	describe('getFileById', () => {
+		it('should return a file when found', async () => {
+			const fileMock = new FileMockBuilder()
+				.withId('file-1')
+				.withUserId('user-1')
+				.withVideoUrl('http://mock.video.url/video.mp4')
+				.build();
 
-            const fileMockWithId = {
-                ...fileMock,
-                id: fileMock.id!,
-                videoUrl: fileMock.videoUrl ?? null,
-                imagesCompressedUrl: fileMock.imagesCompressedUrl ?? null,
-                screenshotsTime: new Decimal(fileMock.screenshotsTime),
-            };
+			const fileMockWithId = {
+				...fileMock,
+				id: fileMock.id!,
+				videoUrl: fileMock.videoUrl ?? null,
+				imagesCompressedUrl: fileMock.imagesCompressedUrl ?? null,
+				screenshotsTime: new Decimal(fileMock.screenshotsTime),
+			};
 
-            (prisma.file.findUnique as jest.Mock).mockResolvedValue(fileMockWithId);
+			(prisma.file.findUnique as jest.Mock).mockResolvedValue(fileMockWithId);
 
-            const result = await repository.getFileById('file-1');
+			const result = await repository.getFileById('file-1');
 
-            expect(prisma.file.findUnique).toHaveBeenCalledWith({ where: { id: 'file-1' } });
-            expect(result).toEqual(toFileDTO(fileMockWithId));
-        });
+			expect(prisma.file.findUnique).toHaveBeenCalledWith({
+				where: { id: 'file-1' },
+			});
+			expect(result).toEqual(toFileDTO(fileMockWithId));
+		});
 
-        it('should return null if file is not found', async () => {
-            (prisma.file.findUnique as jest.Mock).mockResolvedValue(null);
+		it('should return an empty object with default values if file is not found', async () => {
+			(prisma.file.findUnique as jest.Mock).mockResolvedValue(null);
 
-            const result = await repository.getFileById('non-existent-id');
+			const result = await repository.getFileById('non-existent-id');
 
-            expect(prisma.file.findUnique).toHaveBeenCalledWith({ where: { id: 'non-existent-id' } });
-            expect(result).toBeNull();
-        });
-    });
+			expect(prisma.file.findUnique).toHaveBeenCalledWith({
+				where: { id: 'non-existent-id' },
+			});
 
-    describe('getFileByIdOrThrow', () => {
-        it('should return a file when found', async () => {
-            const fileMock = new FileMockBuilder()
-                .withId('file-1')
-                .withUserId('user-1')
-                .build();
+			expect(result).toEqual({
+				id: '',
+				userId: '',
+				videoUrl: null,
+				imagesCompressedUrl: null,
+				screenshotsTime: 0,
+				createdAt: expect.any(Date),
+				updatedAt: expect.any(Date),
+				status: 'initialized',
+			});
+		});
+	});
 
-            const fileMockWithId = {
-                ...fileMock,
-                id: fileMock.id!,
-                videoUrl: fileMock.videoUrl ?? null,
-                imagesCompressedUrl: fileMock.imagesCompressedUrl ?? null,
-                screenshotsTime: new Decimal(fileMock.screenshotsTime),
-            };
+	describe('getFileByIdOrThrow', () => {
+		it('should return a file when found', async () => {
+			const fileMock = new FileMockBuilder()
+				.withId('file-1')
+				.withUserId('user-1')
+				.withVideoUrl('http://mock.video.url/video.mp4')
+				.build();
 
-            (prisma.file.findUnique as jest.Mock).mockResolvedValue(fileMockWithId);
+			const fileMockWithId = {
+				...fileMock,
+				id: fileMock.id!,
+				videoUrl: fileMock.videoUrl ?? null,
+				imagesCompressedUrl: fileMock.imagesCompressedUrl ?? null,
+				screenshotsTime: new Decimal(fileMock.screenshotsTime),
+			};
 
-            const result = await repository.getFileByIdOrThrow('file-1');
+			(prisma.file.findUnique as jest.Mock).mockResolvedValue(fileMockWithId);
 
-            expect(result).toEqual(toFileDTO(fileMockWithId));
-        });
+			const result = await repository.getFileByIdOrThrow('file-1');
 
-        it('should throw InvalidFileException when file is not found', async () => {
-            (prisma.file.findUnique as jest.Mock).mockResolvedValue(null);
+			expect(result).toEqual(toFileDTO(fileMockWithId));
+		});
 
-            await expect(repository.getFileByIdOrThrow('non-existent-id'))
-                .rejects.toThrow(InvalidFileException);
-        });
-    });
+		it('should throw InvalidFileException when file is not found', async () => {
+			(prisma.file.findUnique as jest.Mock).mockResolvedValue(null);
 
-    describe('getFilesByUserId', () => {
-        it('should return files for the given userId', async () => {
-            const file1 = new FileMockBuilder().withId('file-1').withUserId('user-1').build();
-            const file2 = new FileMockBuilder().withId('file-2').withUserId('user-1').build();
+			await expect(
+				repository.getFileByIdOrThrow('non-existent-id')
+			).rejects.toThrow(InvalidFileException);
+		});
+	});
 
-            const file1WithId = {
-                ...file1,
-                id: file1.id!,
-                videoUrl: file1.videoUrl ?? null,
-                imagesCompressedUrl: file1.imagesCompressedUrl ?? null,
-                screenshotsTime: new Decimal(file1.screenshotsTime),
-            };
+	describe('getFilesByUserId', () => {
+		it('should return files for the given userId', async () => {
+			const file1 = new FileMockBuilder()
+				.withId('file-1')
+				.withUserId('user-1')
+				.withVideoUrl('http://mock.video.url/video.mp4')
+				.build();
+			const file2 = new FileMockBuilder()
+				.withId('file-2')
+				.withUserId('user-1')
+				.withVideoUrl('http://mock.video.url/video.mp4')
+				.build();
 
-            const file2WithId = {
-                ...file2,
-                id: file2.id!,
-                videoUrl: file2.videoUrl ?? null,
-                imagesCompressedUrl: file2.imagesCompressedUrl ?? null,
-                screenshotsTime: new Decimal(file2.screenshotsTime),
-            };
+			const file1WithId = {
+				...file1,
+				id: file1.id!,
+				videoUrl: file1.videoUrl ?? null,
+				imagesCompressedUrl: file1.imagesCompressedUrl ?? null,
+				screenshotsTime: new Decimal(file1.screenshotsTime),
+			};
 
-            (prisma.file.findMany as jest.Mock).mockResolvedValue([file1WithId, file2WithId]);
+			const file2WithId = {
+				...file2,
+				id: file2.id!,
+				videoUrl: file2.videoUrl ?? null,
+				imagesCompressedUrl: file2.imagesCompressedUrl ?? null,
+				screenshotsTime: new Decimal(file2.screenshotsTime),
+			};
 
-            const result = await repository.getFilesByUserId('user-1');
+			(prisma.file.findMany as jest.Mock).mockResolvedValue([
+				file1WithId,
+				file2WithId,
+			]);
 
-            expect(prisma.file.findMany).toHaveBeenCalledWith({ where: { userId: 'user-1' } });
-            expect(result).toEqual([toFileDTO(file1WithId), toFileDTO(file2WithId)]);
-        });
-    });
+			const result = await repository.getFilesByUserId('user-1');
 
-    describe('getFileByUserIdOrThrow', () => {
-        it('should return the first file for the given userId', async () => {
-            const fileFromPrisma = new FileMockBuilder().withId('file-1').withUserId('user-1').build();
-            const fileWithId = { ...fileFromPrisma, id: fileFromPrisma.id!, videoUrl: fileFromPrisma.videoUrl ?? null };
+			expect(prisma.file.findMany).toHaveBeenCalledWith({
+				where: { userId: 'user-1' },
+			});
+			expect(result).toEqual([toFileDTO(file1WithId), toFileDTO(file2WithId)]);
+		});
+	});
 
-            (prisma.file.findFirstOrThrow as jest.Mock).mockResolvedValue(fileWithId);
+	describe('getFileByUserIdOrThrow', () => {
+		it('should return the first file for the given userId', async () => {
+			const fileFromPrisma = new FileMockBuilder()
+				.withId('file-1')
+				.withUserId('user-1')
+				.withVideoUrl('http://mock.video.url/video.mp4')
+				.build();
+			const fileWithId = {
+				...fileFromPrisma,
+				id: fileFromPrisma.id!,
+				videoUrl: fileFromPrisma.videoUrl ?? null,
+			};
 
-            const result = await repository.getFileByUserIdOrThrow('user-1');
-            const expectedResult = { ...fileWithId, screenshotsTime: Number(fileWithId.screenshotsTime) };
+			(prisma.file.findFirstOrThrow as jest.Mock).mockResolvedValue(fileWithId);
 
-            expect(prisma.file.findFirstOrThrow).toHaveBeenCalledWith({
-                where: { userId: 'user-1' },
-                select: {
-                    createdAt: true,
-                    id: true,
-                    imagesCompressedUrl: true,
-                    screenshotsTime: true,
-                    status: true,
-                    updatedAt: true,
-                    userId: true,
-                    videoUrl: true,
-                },
-            });
-            expect(result).toEqual(expectedResult);
-        });
-    });
+			const result = await repository.getFileByUserIdOrThrow('user-1');
+			const expectedResult = {
+				...fileWithId,
+				screenshotsTime: Number(fileWithId.screenshotsTime),
+			};
 
-    describe('createFile', () => {
-        it('should create and return a file', async () => {
-            const fileData = new FileMockBuilder().withId('file-1').withUserId('user-1').build();
+			expect(prisma.file.findFirstOrThrow).toHaveBeenCalledWith({
+				where: { userId: 'user-1' },
+				select: {
+					createdAt: true,
+					id: true,
+					imagesCompressedUrl: true,
+					screenshotsTime: true,
+					status: true,
+					updatedAt: true,
+					userId: true,
+					videoUrl: true,
+				},
+			});
+			expect(result).toEqual(expectedResult);
+		});
+	});
 
-            const fileDataWithId = {
-                ...fileData,
-                id: fileData.id!,
-                videoUrl: fileData.videoUrl ?? null,
-                imagesCompressedUrl: fileData.imagesCompressedUrl ?? null,
-                screenshotsTime: new Decimal(fileData.screenshotsTime),
-            };
+	describe('createFile', () => {
+		it('should create and return a file', async () => {
+			const fileData = new FileMockBuilder()
+				.withId('file-1')
+				.withUserId('user-1')
+				.withVideoUrl('http://mock.video.url/video.mp4')
+				.build();
 
-            (prisma.file.create as jest.Mock).mockResolvedValue(fileData);
+			const fileDataWithId = {
+				...fileData,
+				id: fileData.id!,
+				videoUrl: fileData.videoUrl ?? null,
+				imagesCompressedUrl: fileData.imagesCompressedUrl ?? null,
+				screenshotsTime: new Decimal(fileData.screenshotsTime),
+			};
 
-            const result = await repository.createFile(fileData);
+			(prisma.file.create as jest.Mock).mockResolvedValue({
+				...fileData,
+				screenshotsTime: new Decimal(fileData.screenshotsTime),
+			});
 
-            expect(prisma.file.create).toHaveBeenCalledWith({
-                data: { ...fileData, videoUrl: fileData.videoUrl || '' },
-            });
-            expect(result).toEqual(toFileDTO(fileDataWithId));
-        });
-    });
+			const result = await repository.createFile(fileData);
 
-    describe('updateFile', () => {
-        it('should update and return a file', async () => {
-            const fileData = new FileMockBuilder().withId('file-1').withUserId('user-1').build();
+			expect(prisma.file.create).toHaveBeenCalledWith({
+				data: { ...fileData },
+			});
+			expect(result).toEqual(toFileDTO(fileDataWithId));
+		});
+	});
 
-            const fileDataWithId = {
-                ...fileData,
-                id: fileData.id!,
-                videoUrl: fileData.videoUrl ?? null,
-                imagesCompressedUrl: fileData.imagesCompressedUrl ?? null,
-                screenshotsTime: new Decimal(fileData.screenshotsTime),
-            };
+	describe('updateFile', () => {
+		it('should update and return a file', async () => {
+			const fileData = new FileMockBuilder()
+				.withId('file-1')
+				.withUserId('user-1')
+				.withVideoUrl('http://mock.video.url/video.mp4')
+				.build();
 
-            const updatedFile = { ...fileData, status: 'processed' };
+			const fileDataWithId = {
+				...fileData,
+				id: fileData.id!,
+				videoUrl: fileData.videoUrl ?? null,
+				imagesCompressedUrl: fileData.imagesCompressedUrl ?? null,
+				screenshotsTime: new Decimal(fileData.screenshotsTime),
+			};
 
-            (prisma.file.update as jest.Mock).mockResolvedValue(updatedFile);
+			const updatedFile = { ...fileData, status: 'processed' };
 
-            const result = await repository.updateFile({ id: fileData.id, status: 'processed' });
+			(prisma.file.update as jest.Mock).mockResolvedValue({
+				...updatedFile,
+				screenshotsTime: new Decimal(fileData.screenshotsTime),
+			});
 
-            expect(prisma.file.update).toHaveBeenCalledWith({
-                where: { id: fileData.id },
-                data: { ...{ id: fileData.id, status: 'processed' }, videoUrl: fileData.videoUrl || '' },
-            });
-            expect(result).toEqual(toFileDTO(fileDataWithId));
-        });
-    });
+			const result = await repository.updateFile({
+				id: fileData.id,
+				status: StatusEnum.processed,
+			});
 
-    describe('deleteFile', () => {
-        it('should call delete on prisma with the given file id', async () => {
-            (prisma.file.delete as jest.Mock).mockResolvedValue(undefined);
+			const updatedFileDataWithId = {
+				...fileDataWithId,
+				status: StatusEnum.processed,
+			};
 
-            await repository.deleteFile('file-1');
+			expect(prisma.file.update).toHaveBeenCalledWith({
+				where: { id: fileData.id },
+				data: {
+					id: fileData.id,
+					status: StatusEnum.processed,
+					videoUrl: null,
+				},
+			});
 
-            expect(prisma.file.delete).toHaveBeenCalledWith({ where: { id: 'file-1' } });
-        });
-    });
+			expect(result).toEqual(toFileDTO(updatedFileDataWithId));
+		});
+	});
+
+	describe('deleteFile', () => {
+		it('should call delete on prisma with the given file id', async () => {
+			(prisma.file.delete as jest.Mock).mockResolvedValue(undefined);
+
+			await repository.deleteFile('file-1');
+
+			expect(prisma.file.delete).toHaveBeenCalledWith({
+				where: { id: 'file-1' },
+			});
+		});
+	});
 });

@@ -14,7 +14,9 @@ export class FileRepositoryImpl implements FileRepository {
 	}
 
 	async getFileByIdOrThrow(id: string): Promise<File> {
-		const file = await this.getFileById(id);
+		const file = await prisma.file.findUnique({
+			where: { id },
+		});
 
 		if (!file) {
 			throw new InvalidFileException(`File with id ${id} not found.`);
@@ -49,12 +51,12 @@ export class FileRepositoryImpl implements FileRepository {
 		return {
 			...file,
 			screenshotsTime: Number(file.screenshotsTime),
-		}
+		};
 	}
 
 	async createFile(file: File): Promise<File> {
 		const createdFile: any = await prisma.file.create({
-			data: { ...file, videoUrl: file?.videoUrl || '' },
+			data: { ...file, videoUrl: file?.videoUrl || null },
 		});
 
 		return toFileDTO(createdFile);
@@ -63,7 +65,7 @@ export class FileRepositoryImpl implements FileRepository {
 	async updateFile(file: Partial<File>): Promise<File> {
 		const updatedFile: any = await prisma.file.update({
 			where: { id: file.id },
-			data: { ...file, videoUrl: file?.videoUrl || '' },
+			data: { ...file, videoUrl: file?.videoUrl || null },
 		});
 
 		return toFileDTO(updatedFile);
