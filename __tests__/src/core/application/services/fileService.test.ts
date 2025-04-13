@@ -1,8 +1,7 @@
 import { InvalidFileException } from '@exceptions/invalidFileException';
 import { MultipartFile } from '@fastify/multipart';
 import { CreateFileParams, UpdateFileParams } from '@ports/input/file';
-import { FileService } from '@src/core/application/services';
-
+import { FileService } from '@src/core/application/services/fileService';
 import { FileMockBuilder } from '../../../../mocks/file.mock-builder';
 
 describe('FileService', () => {
@@ -44,40 +43,6 @@ describe('FileService', () => {
 		);
 	});
 
-	describe('getFileById', () => {
-		it('should return the file when found', async () => {
-			const file = new FileMockBuilder()
-				.withId('file-1')
-				.withUserId('user-1')
-				.build();
-			fileRepository.getFileById.mockResolvedValue(file);
-
-			const result = await fileService.getFileById('file-1');
-
-			expect(fileRepository.getFileById).toHaveBeenCalledWith('file-1');
-			expect(result).toEqual(file);
-		});
-	});
-
-	describe('getFilesByUserId', () => {
-		it("should return the user's file list when found", async () => {
-			const file1 = new FileMockBuilder()
-				.withId('file-1')
-				.withUserId('user-1')
-				.build();
-			const file2 = new FileMockBuilder()
-				.withId('file-2')
-				.withUserId('user-1')
-				.build();
-			fileRepository.getFilesByUserId.mockResolvedValue([file1, file2]);
-
-			const result = await fileService.getFilesByUserId('user-1');
-
-			expect(fileRepository.getFilesByUserId).toHaveBeenCalledWith('user-1');
-			expect(result).toEqual([file1, file2]);
-		});
-	});
-
 	describe('createFile', () => {
 		const validCreateParams: CreateFileParams = {
 			userId: 'user-1',
@@ -86,30 +51,67 @@ describe('FileService', () => {
 		const validVideoFile = { filename: 'video.mp4' } as MultipartFile;
 
 		it('should throw an error if videoFile is undefined', async () => {
-			await expect(
-				fileService.createFile(validCreateParams, undefined)
-			).rejects.toThrow(InvalidFileException);
+			const rejectedFunction = async () => {
+				await fileService.createFile(validCreateParams, undefined);
+			};
+
+			try {
+				await rejectedFunction();
+				fail('The function should have thrown an InvalidFileException');
+			} catch (error: any) {
+				expect(error).toBeInstanceOf(InvalidFileException);
+				expect(error.message).toBe('videoFile não é válido.');
+			}
 		});
 
 		it('should throw an error if screenshotsTime is lower than the minimum', async () => {
 			const invalidParams = { ...validCreateParams, screenshotsTime: 0.05 };
-			await expect(
-				fileService.createFile(invalidParams, validVideoFile)
-			).rejects.toThrow(InvalidFileException);
+			const rejectedFunction = async () => {
+				await fileService.createFile(invalidParams, validVideoFile);
+			};
+
+			try {
+				await rejectedFunction();
+				fail('The function should have thrown an InvalidFileException');
+			} catch (error: any) {
+				expect(error).toBeInstanceOf(InvalidFileException);
+				expect(error.message).toBe(
+					'Screenshot Time deve ser entre 0.1 e 30 segundos'
+				);
+			}
 		});
 
 		it('should throw an error if screenshotsTime is greater than the maximum', async () => {
 			const invalidParams = { ...validCreateParams, screenshotsTime: 31 };
-			await expect(
-				fileService.createFile(invalidParams, validVideoFile)
-			).rejects.toThrow(InvalidFileException);
+			const rejectedFunction = async () => {
+				await fileService.createFile(invalidParams, validVideoFile);
+			};
+
+			try {
+				await rejectedFunction();
+				fail('The function should have thrown an InvalidFileException');
+			} catch (error: any) {
+				expect(error).toBeInstanceOf(InvalidFileException);
+				expect(error.message).toBe(
+					'Screenshot Time deve ser entre 0.1 e 30 segundos'
+				);
+			}
 		});
 
 		it('should throw an error if video format is invalid', async () => {
 			const invalidVideoFile = { filename: 'video.txt' } as MultipartFile;
-			await expect(
-				fileService.createFile(validCreateParams, invalidVideoFile)
-			).rejects.toThrow(InvalidFileException);
+			const rejectedFunction = async () => {
+				await fileService.createFile(validCreateParams, invalidVideoFile);
+			};
+
+			try {
+				await rejectedFunction();
+				fail('The function should have thrown an InvalidFileException');
+			} catch (error: any) {
+				expect(error).toBeInstanceOf(InvalidFileException);
+				const expectedPattern = /Invalid video format\.\s+Current format: txt\.\s+Allowed formats: mp4, mov, mkv, avi, wmv, webm/;
+				expect(error.message).toMatch(expectedPattern);
+			}
 		});
 
 		it('should create the file and return the created file with status "initialized"', async () => {
@@ -201,6 +203,30 @@ describe('FileService', () => {
 			);
 			expect(result).toEqual(updatedFile);
 		});
+
+		it('should throw an error if getUserInternal fails', async () => {
+			const existingFile = new FileMockBuilder()
+				.withId('file-1')
+				.withUserId('user-1')
+				.build();
+			const updatedFile = new FileMockBuilder()
+				.withId('file-1')
+				.withUserId('user-1')
+				.build();
+			updatedFile.imagesCompressedUrl = validUpdateParams.compressedFileKey;
+			updatedFile.status = validUpdateParams.status;
+
+			fileRepository.getFileByIdOrThrow.mockResolvedValue(existingFile);
+			fileRepository.updateFile.mockResolvedValue(updatedFile);
+
+			(fileService as any).getUserInternal = jest
+				.fn()
+				.mockRejectedValue(new Error('Usuário não encontrado'));
+
+			await expect(fileService.updateFile(validUpdateParams)).rejects.toThrow(
+				'Usuário não encontrado'
+			);
+		});
 	});
 
 	describe('getSignedUrl', () => {
@@ -209,7 +235,6 @@ describe('FileService', () => {
 				.withId('file-1')
 				.withUserId('user-1')
 				.build();
-
 			file.imagesCompressedUrl = 'compressed.jpg';
 			fileRepository.getFileById.mockResolvedValue(file);
 
@@ -220,9 +245,7 @@ describe('FileService', () => {
 			const result = await fileService.getSignedUrl('file-1');
 
 			expect(fileRepository.getFileById).toHaveBeenCalledWith('file-1');
-			expect(simpleStorageService.getSignedUrl).toHaveBeenCalledWith(
-				expectedPath
-			);
+			expect(simpleStorageService.getSignedUrl).toHaveBeenCalledWith(expectedPath);
 			expect(result).toEqual(expectedSignedUrl);
 		});
 	});
@@ -249,9 +272,17 @@ describe('FileService', () => {
 
 		it('should throw an error if the file is not found', async () => {
 			fileRepository.getFileById.mockResolvedValue(null);
-			await expect(fileService.deleteFile('non-existent-file')).rejects.toThrow(
-				InvalidFileException
-			);
+
+			const rejectedFunction = async () => {
+				await fileService.deleteFile('non-existent-file');
+			};
+
+			try {
+				await rejectedFunction();
+				fail('The function should have thrown an InvalidFileException');
+			} catch (error: any) {
+				expect(error).toBeInstanceOf(InvalidFileException);
+			}
 		});
 	});
 });

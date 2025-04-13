@@ -4,8 +4,11 @@ import { InvalidFileException } from '@exceptions/invalidFileException';
 import { Decimal } from '@prisma/client/runtime/library';
 import { FileRepositoryImpl } from '@src/adapter/driven/infra';
 import { StatusEnum } from '@src/core/application/enumerations/statusEnum';
-
 import { FileMockBuilder } from '../../../../mocks/file.mock-builder';
+
+const fail = (message?: string): never => {
+	throw new Error(message || 'Test failed');
+};
 
 jest.mock('@driven/infra/lib/prisma', () => ({
 	prisma: {
@@ -25,7 +28,7 @@ describe('FileRepositoryImpl', () => {
 
 	beforeEach(() => {
 		repository = new FileRepositoryImpl();
-		jest.clearAllMocks();
+		jest.resetAllMocks();
 	});
 
 	describe('getFileById', () => {
@@ -39,7 +42,7 @@ describe('FileRepositoryImpl', () => {
 			const fileMockWithId = {
 				...fileMock,
 				id: fileMock.id!,
-				videoUrl: fileMock.videoUrl ?? null,
+				videoUrl: fileMock.videoUrl ?? '',
 				imagesCompressedUrl: fileMock.imagesCompressedUrl ?? null,
 				screenshotsTime: new Decimal(fileMock.screenshotsTime),
 			};
@@ -62,7 +65,6 @@ describe('FileRepositoryImpl', () => {
 			expect(prisma.file.findUnique).toHaveBeenCalledWith({
 				where: { id: 'non-existent-id' },
 			});
-
 			expect(result).toBeNull();
 		});
 	});
@@ -78,7 +80,7 @@ describe('FileRepositoryImpl', () => {
 			const fileMockWithId = {
 				...fileMock,
 				id: fileMock.id!,
-				videoUrl: fileMock.videoUrl ?? null,
+				videoUrl: fileMock.videoUrl ?? '',
 				imagesCompressedUrl: fileMock.imagesCompressedUrl ?? null,
 				screenshotsTime: new Decimal(fileMock.screenshotsTime),
 			};
@@ -93,9 +95,17 @@ describe('FileRepositoryImpl', () => {
 		it('should throw InvalidFileException when file is not found', async () => {
 			(prisma.file.findUnique as jest.Mock).mockResolvedValue(null);
 
-			await expect(
-				repository.getFileByIdOrThrow('non-existent-id')
-			).rejects.toThrow(InvalidFileException);
+			const rejectedFunction = async () => {
+				await repository.getFileByIdOrThrow('non-existent-id');
+			};
+
+			try {
+				await rejectedFunction();
+				fail('The function should have thrown an InvalidFileException');
+			} catch (error: any) {
+				expect(error).toBeInstanceOf(InvalidFileException);
+				expect(error.message).toBe('File with id non-existent-id not found.');
+			}
 		});
 	});
 
@@ -115,7 +125,7 @@ describe('FileRepositoryImpl', () => {
 			const file1WithId = {
 				...file1,
 				id: file1.id!,
-				videoUrl: file1.videoUrl ?? null,
+				videoUrl: file1.videoUrl ?? '',
 				imagesCompressedUrl: file1.imagesCompressedUrl ?? null,
 				screenshotsTime: new Decimal(file1.screenshotsTime),
 			};
@@ -123,7 +133,7 @@ describe('FileRepositoryImpl', () => {
 			const file2WithId = {
 				...file2,
 				id: file2.id!,
-				videoUrl: file2.videoUrl ?? null,
+				videoUrl: file2.videoUrl ?? '',
 				imagesCompressedUrl: file2.imagesCompressedUrl ?? null,
 				screenshotsTime: new Decimal(file2.screenshotsTime),
 			};
@@ -152,7 +162,7 @@ describe('FileRepositoryImpl', () => {
 			const fileWithId = {
 				...fileFromPrisma,
 				id: fileFromPrisma.id!,
-				videoUrl: fileFromPrisma.videoUrl ?? null,
+				videoUrl: fileFromPrisma.videoUrl ?? '',
 			};
 
 			(prisma.file.findFirstOrThrow as jest.Mock).mockResolvedValue(fileWithId);
@@ -191,7 +201,7 @@ describe('FileRepositoryImpl', () => {
 			const fileDataWithId = {
 				...fileData,
 				id: fileData.id!,
-				videoUrl: fileData.videoUrl ?? null,
+				videoUrl: fileData.videoUrl ?? '',
 				imagesCompressedUrl: fileData.imagesCompressedUrl ?? null,
 				screenshotsTime: new Decimal(fileData.screenshotsTime),
 			};
@@ -221,7 +231,7 @@ describe('FileRepositoryImpl', () => {
 			const fileDataWithId = {
 				...fileData,
 				id: fileData.id!,
-				videoUrl: fileData.videoUrl ?? null,
+				videoUrl: fileData.videoUrl ?? '',
 				imagesCompressedUrl: fileData.imagesCompressedUrl ?? null,
 				screenshotsTime: new Decimal(fileData.screenshotsTime),
 			};
@@ -248,7 +258,7 @@ describe('FileRepositoryImpl', () => {
 				data: {
 					id: fileData.id,
 					status: StatusEnum.processed,
-					videoUrl: null,
+					videoUrl: '',
 				},
 			});
 

@@ -26,7 +26,10 @@ export class FileRepositoryImpl implements FileRepository {
 			throw new InvalidFileException(`File with id ${id} not found.`);
 		}
 
-		return file;
+		return {
+			...file,
+			screenshotsTime: Number(file.screenshotsTime),
+		};
 	}
 
 	async getFilesByUserId(userId: string): Promise<File[]> {
@@ -60,7 +63,7 @@ export class FileRepositoryImpl implements FileRepository {
 
 	async createFile(file: File): Promise<File> {
 		const createdFile: any = await prisma.file.create({
-			data: { ...file, videoUrl: file?.videoUrl || null },
+			data: { ...file, videoUrl: file?.videoUrl || '' },
 		});
 
 		return toFileDTO(createdFile);
@@ -69,7 +72,7 @@ export class FileRepositoryImpl implements FileRepository {
 	async updateFile(file: Partial<File>): Promise<File> {
 		const updatedFile: any = await prisma.file.update({
 			where: { id: file.id },
-			data: { ...file, videoUrl: file?.videoUrl || null },
+			data: { ...file, videoUrl: file?.videoUrl || '' },
 		});
 
 		return toFileDTO(updatedFile);
