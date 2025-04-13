@@ -10,6 +10,10 @@ export class FileRepositoryImpl implements FileRepository {
 			where: { id },
 		});
 
+		if (!file) {
+			return null;
+		}
+
 		return toFileDTO(file);
 	}
 

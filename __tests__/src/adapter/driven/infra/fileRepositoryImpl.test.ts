@@ -54,7 +54,7 @@ describe('FileRepositoryImpl', () => {
 			expect(result).toEqual(toFileDTO(fileMockWithId));
 		});
 
-		it('should return an empty object with default values if file is not found', async () => {
+		it('should return null if file is not found', async () => {
 			(prisma.file.findUnique as jest.Mock).mockResolvedValue(null);
 
 			const result = await repository.getFileById('non-existent-id');
@@ -63,16 +63,7 @@ describe('FileRepositoryImpl', () => {
 				where: { id: 'non-existent-id' },
 			});
 
-			expect(result).toEqual({
-				id: '',
-				userId: '',
-				videoUrl: null,
-				imagesCompressedUrl: null,
-				screenshotsTime: 0,
-				createdAt: expect.any(Date),
-				updatedAt: expect.any(Date),
-				status: 'initialized',
-			});
+			expect(result).toBeNull();
 		});
 	});
 
