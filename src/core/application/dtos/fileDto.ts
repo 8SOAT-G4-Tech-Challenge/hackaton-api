@@ -13,8 +13,8 @@ type PrismaFile = {
 	updatedAt: Date;
 };
 
-export function toFileDTO(prismaFile: PrismaFile): File | undefined {
-	if (!prismaFile) return undefined;
+export function toFileDTO(prismaFile: PrismaFile): File {
+	if (!prismaFile) return {} as File;
 
 	return {
 		...prismaFile,

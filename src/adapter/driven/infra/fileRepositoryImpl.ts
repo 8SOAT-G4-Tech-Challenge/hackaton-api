@@ -38,6 +38,7 @@ export class FileRepositoryImpl implements FileRepository {
 				createdAt: true,
 				id: true,
 				imagesCompressedUrl: true,
+				screenshotsTime: true,
 				status: true,
 				updatedAt: true,
 				userId: true,
@@ -45,7 +46,10 @@ export class FileRepositoryImpl implements FileRepository {
 			},
 		});
 
-		return file;
+		return {
+			...file,
+			screenshotsTime: Number(file.screenshotsTime),
+		}
 	}
 
 	async createFile(file: File): Promise<File> {
