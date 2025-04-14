@@ -1,5 +1,5 @@
 {
-	"name": "hackaton-frame-zipper",
+	"name": "hackaton-api",
 	"version": "1.0.0",
 	"description": "Hackaton - FIAP Tech Challenge",
 	"main": "index.js",
