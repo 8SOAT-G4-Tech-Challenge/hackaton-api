@@ -2,6 +2,7 @@ import { InvalidFileException } from '@exceptions/invalidFileException';
 import { MultipartFile } from '@fastify/multipart';
 import { CreateFileParams, UpdateFileParams } from '@ports/input/file';
 import { FileService } from '@src/core/application/services/fileService';
+
 import { FileMockBuilder } from '../../../../mocks/file.mock-builder';
 
 describe('FileService', () => {
@@ -109,7 +110,8 @@ describe('FileService', () => {
 				fail('The function should have thrown an InvalidFileException');
 			} catch (error: any) {
 				expect(error).toBeInstanceOf(InvalidFileException);
-				const expectedPattern = /Invalid video format\.\s+Current format: txt\.\s+Allowed formats: mp4, mov, mkv, avi, wmv, webm/;
+				const expectedPattern =
+					/Invalid video format\.\s+Current format: txt\.\s+Allowed formats: mp4, mov, mkv, avi, wmv, webm/;
 				expect(error.message).toMatch(expectedPattern);
 			}
 		});
@@ -154,7 +156,6 @@ describe('FileService', () => {
 			userId: 'user-1',
 			status: 'processed',
 			compressedFileKey: 'compressed.jpg',
-			userPhoneNumber: '123456789',
 			fileId: 'file-1',
 		};
 
@@ -245,7 +246,9 @@ describe('FileService', () => {
 			const result = await fileService.getSignedUrl('file-1');
 
 			expect(fileRepository.getFileById).toHaveBeenCalledWith('file-1');
-			expect(simpleStorageService.getSignedUrl).toHaveBeenCalledWith(expectedPath);
+			expect(simpleStorageService.getSignedUrl).toHaveBeenCalledWith(
+				expectedPath
+			);
 			expect(result).toEqual(expectedSignedUrl);
 		});
 	});

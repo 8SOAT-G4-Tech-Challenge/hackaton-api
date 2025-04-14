@@ -11,7 +11,6 @@ export type CreateFileParams = {
 export type UpdateFileParams = {
 	id: string;
 	userId: string;
-	userPhoneNumber: string;
 	fileId: string;
 	compressedFileKey: string;
 	status: StatusType;

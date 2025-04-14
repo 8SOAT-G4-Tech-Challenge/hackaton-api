@@ -9,7 +9,6 @@ import { AwsSimpleQueueImpl } from '@driven/infra/awsSimpleQueueImpl';
 import { AwsSimpleStorageImpl } from '@driven/infra/awsSimpleStorageImpl';
 import { FileController, NotificationController } from '@driver/controllers';
 
-import { UpdateFileParams } from '@src/core/application/ports/input/file';
 import { userMiddleware } from '../middlewares/user';
 
 const fileRepository = new FileRepositoryImpl();
@@ -41,15 +40,12 @@ export const routes = async (fastify: FastifyInstance) => {
 	fastify.get('/health', async (_request, reply) => {
 		reply.status(200).send({ message: 'Health Check - Ok' });
 	});
+
+	// Rotas API Gateway
 	fastify.post(
 		'/upload',
 		{ preHandler: userMiddleware },
 		fileController.createFile.bind(fileController)
-	);
-	fastify.put<{ Params: { fileId: string }, Body: UpdateFileParams }>(
-		'/files/:fileId',
-		{ preHandler: userMiddleware },
-		fileController.updateFile.bind(fileController)
 	);
 	fastify.get(
 		'/download/:fileId',
@@ -71,5 +67,7 @@ export const routes = async (fastify: FastifyInstance) => {
 		notificationController.getNotificationsByUserId.bind(notificationController)
 	);
 	fastify.delete('/:fileId', fileController.deleteFile.bind(fileController));
+
+	// Internal
 	fastify.put('/:fileId', fileController.updateFile.bind(fileController));
 };

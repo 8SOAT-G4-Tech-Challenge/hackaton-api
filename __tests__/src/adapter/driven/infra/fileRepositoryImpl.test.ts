@@ -4,6 +4,7 @@ import { InvalidFileException } from '@exceptions/invalidFileException';
 import { Decimal } from '@prisma/client/runtime/library';
 import { FileRepositoryImpl } from '@src/adapter/driven/infra';
 import { StatusEnum } from '@src/core/application/enumerations/statusEnum';
+
 import { FileMockBuilder } from '../../../../mocks/file.mock-builder';
 
 const fail = (message?: string): never => {
@@ -149,44 +150,6 @@ describe('FileRepositoryImpl', () => {
 				where: { userId: 'user-1' },
 			});
 			expect(result).toEqual([toFileDTO(file1WithId), toFileDTO(file2WithId)]);
-		});
-	});
-
-	describe('getFileByUserIdOrThrow', () => {
-		it('should return the first file for the given userId', async () => {
-			const fileFromPrisma = new FileMockBuilder()
-				.withId('file-1')
-				.withUserId('user-1')
-				.withVideoUrl('http://mock.video.url/video.mp4')
-				.build();
-			const fileWithId = {
-				...fileFromPrisma,
-				id: fileFromPrisma.id!,
-				videoUrl: fileFromPrisma.videoUrl ?? '',
-			};
-
-			(prisma.file.findFirstOrThrow as jest.Mock).mockResolvedValue(fileWithId);
-
-			const result = await repository.getFileByUserIdOrThrow('user-1');
-			const expectedResult = {
-				...fileWithId,
-				screenshotsTime: Number(fileWithId.screenshotsTime),
-			};
-
-			expect(prisma.file.findFirstOrThrow).toHaveBeenCalledWith({
-				where: { userId: 'user-1' },
-				select: {
-					createdAt: true,
-					id: true,
-					imagesCompressedUrl: true,
-					screenshotsTime: true,
-					status: true,
-					updatedAt: true,
-					userId: true,
-					videoUrl: true,
-				},
-			});
-			expect(result).toEqual(expectedResult);
 		});
 	});
 

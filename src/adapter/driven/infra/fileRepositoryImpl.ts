@@ -40,27 +40,6 @@ export class FileRepositoryImpl implements FileRepository {
 		return files.map(toFileDTO);
 	}
 
-	async getFileByUserIdOrThrow(userId: string): Promise<File> {
-		const file = await prisma.file.findFirstOrThrow({
-			where: { userId },
-			select: {
-				createdAt: true,
-				id: true,
-				imagesCompressedUrl: true,
-				screenshotsTime: true,
-				status: true,
-				updatedAt: true,
-				userId: true,
-				videoUrl: true,
-			},
-		});
-
-		return {
-			...file,
-			screenshotsTime: Number(file.screenshotsTime),
-		};
-	}
-
 	async createFile(file: File): Promise<File> {
 		const createdFile: any = await prisma.file.create({
 			data: { ...file, videoUrl: file?.videoUrl || '' },
