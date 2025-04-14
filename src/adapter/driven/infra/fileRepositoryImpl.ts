@@ -10,17 +10,26 @@ export class FileRepositoryImpl implements FileRepository {
 			where: { id },
 		});
 
+		if (!file) {
+			return null;
+		}
+
 		return toFileDTO(file);
 	}
 
 	async getFileByIdOrThrow(id: string): Promise<File> {
-		const file = await this.getFileById(id);
+		const file = await prisma.file.findUnique({
+			where: { id },
+		});
 
 		if (!file) {
 			throw new InvalidFileException(`File with id ${id} not found.`);
 		}
 
-		return file;
+		return {
+			...file,
+			screenshotsTime: Number(file.screenshotsTime),
+		};
 	}
 
 	async getFilesByUserId(userId: string): Promise<File[]> {

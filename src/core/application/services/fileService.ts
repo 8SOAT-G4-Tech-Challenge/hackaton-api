@@ -130,7 +130,7 @@ export class FileService {
 			screenshotsTime: createFileParams.screenshotsTime,
 		});
 
-		return fileToCreate;
+		return createdFile;
 	}
 
 	async updateFile(updateFileParams: UpdateFileParams): Promise<File> {
