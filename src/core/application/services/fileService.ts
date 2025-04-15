@@ -39,6 +39,16 @@ export class FileService {
 	}
 
 	private async getUserInternal(userId: string) {
+		if (process.env.TEST_MODE === 'true') {
+			logger.info('[TEST MODE] Mocking Cognito user lookup');
+			return {
+				username: 'test-user',
+				email: 'test@example.com',
+				phoneNumber: '+5511999999999',
+				id: userId,
+			};
+		}
+
 		const cognitoClient = new CognitoIdentityProviderClient({
 			region: process.env.AWS_REGION,
 		});
@@ -124,7 +134,7 @@ export class FileService {
 
 			createdFile = {
 				...fileToCreate,
-				id: `mock-file-id-${Date.now()}`, // ID simulado para testes
+				id: `mock-file-id-${Date.now()}`,
 			};
 		} else {
 			createdFile = await this.fileRepository.createFile(fileToCreate);
