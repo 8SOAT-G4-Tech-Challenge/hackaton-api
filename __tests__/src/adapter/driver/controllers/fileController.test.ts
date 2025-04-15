@@ -1,6 +1,8 @@
 import { StatusCodes } from 'http-status-codes';
+
 import * as ErrorHandler from '@driver/errorHandler';
 import { FileController } from '@src/adapter/driver/controllers/fileController';
+
 import { FileMockBuilder } from '../../../../mocks/file.mock-builder';
 
 describe('FileController', () => {
@@ -67,7 +69,11 @@ describe('FileController', () => {
 				});
 
 			await fileController.getFileById(fakeReq, fakeReply);
-			expect(spyHandleError).toHaveBeenCalledWith(fakeReq, fakeReply, testError);
+			expect(spyHandleError).toHaveBeenCalledWith(
+				fakeReq,
+				fakeReply,
+				testError,
+			);
 		});
 	});
 
@@ -97,7 +103,11 @@ describe('FileController', () => {
 				});
 
 			await fileController.getFilesByUserId(fakeReq, fakeReply);
-			expect(spyHandleError).toHaveBeenCalledWith(fakeReq, fakeReply, testError);
+			expect(spyHandleError).toHaveBeenCalledWith(
+				fakeReq,
+				fakeReply,
+				testError,
+			);
 		});
 	});
 
@@ -120,7 +130,7 @@ describe('FileController', () => {
 			expect(fakeReq.file).toHaveBeenCalled();
 			expect(fileService.createFile).toHaveBeenCalledWith(
 				{ userId: 'user-123', screenshotsTime: 45 },
-				fakeVideoFile
+				fakeVideoFile,
 			);
 			expect(fakeReply.code).toHaveBeenCalledWith(StatusCodes.OK);
 			expect(fakeReply.send).toHaveBeenCalledWith(file);
@@ -141,7 +151,7 @@ describe('FileController', () => {
 
 			expect(fileService.createFile).toHaveBeenCalledWith(
 				{ userId: 'user-123', screenshotsTime: 30 },
-				fakeVideoFile
+				fakeVideoFile,
 			);
 			expect(fakeReply.code).toHaveBeenCalledWith(StatusCodes.OK);
 			expect(fakeReply.send).toHaveBeenCalledWith(file);
@@ -162,7 +172,11 @@ describe('FileController', () => {
 				});
 
 			await fileController.createFile(fakeReq, fakeReply);
-			expect(spyHandleError).toHaveBeenCalledWith(fakeReq, fakeReply, testError);
+			expect(spyHandleError).toHaveBeenCalledWith(
+				fakeReq,
+				fakeReply,
+				testError,
+			);
 		});
 	});
 
@@ -202,7 +216,11 @@ describe('FileController', () => {
 				});
 
 			await fileController.updateFile(fakeReq, fakeReply);
-			expect(spyHandleError).toHaveBeenCalledWith(fakeReq, fakeReply, testError);
+			expect(spyHandleError).toHaveBeenCalledWith(
+				fakeReq,
+				fakeReply,
+				testError,
+			);
 		});
 	});
 
@@ -230,7 +248,11 @@ describe('FileController', () => {
 				});
 
 			await fileController.getSignedUrl(fakeReq, fakeReply);
-			expect(spyHandleError).toHaveBeenCalledWith(fakeReq, fakeReply, testError);
+			expect(spyHandleError).toHaveBeenCalledWith(
+				fakeReq,
+				fakeReply,
+				testError,
+			);
 		});
 	});
 
@@ -258,7 +280,11 @@ describe('FileController', () => {
 				});
 
 			await fileController.deleteFile(fakeReq, fakeReply);
-			expect(spyHandleError).toHaveBeenCalledWith(fakeReq, fakeReply, testError);
+			expect(spyHandleError).toHaveBeenCalledWith(
+				fakeReq,
+				fakeReply,
+				testError,
+			);
 		});
 	});
 });

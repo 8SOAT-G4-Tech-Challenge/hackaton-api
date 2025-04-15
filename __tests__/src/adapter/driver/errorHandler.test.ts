@@ -1,4 +1,4 @@
-import { FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyReply, FastifyRequest } from 'fastify';
 import { StatusCodes } from 'http-status-codes';
 import { ZodError } from 'zod';
 
@@ -34,14 +34,14 @@ describe('errorHandler', () => {
 		errorHandler(fakeError, request, reply);
 
 		expect(reply.status).toHaveBeenCalledWith(
-			StatusCodes.INTERNAL_SERVER_ERROR
+			StatusCodes.INTERNAL_SERVER_ERROR,
 		);
 		expect(reply.send).toHaveBeenCalledWith(
 			JSON.stringify({
 				path: '/test',
 				status: StatusCodes.INTERNAL_SERVER_ERROR,
 				message: 'Generic error',
-			})
+			}),
 		);
 	});
 
@@ -55,14 +55,14 @@ describe('errorHandler', () => {
 		errorHandler(error, request, reply);
 
 		expect(reply.status).toHaveBeenCalledWith(
-			StatusCodes.INTERNAL_SERVER_ERROR
+			StatusCodes.INTERNAL_SERVER_ERROR,
 		);
 		expect(reply.send).toHaveBeenCalledWith(
 			JSON.stringify({
 				path: '/test',
 				status: StatusCodes.INTERNAL_SERVER_ERROR,
 				message: 'Test error',
-			})
+			}),
 		);
 	});
 });
@@ -77,14 +77,14 @@ describe('handleError', () => {
 		handleError(req, reply, error);
 
 		expect(reply.status).toHaveBeenCalledWith(
-			StatusCodes.INTERNAL_SERVER_ERROR
+			StatusCodes.INTERNAL_SERVER_ERROR,
 		);
 		expect(reply.send).toHaveBeenCalledWith(
 			JSON.stringify({
 				path: '/test',
 				status: StatusCodes.INTERNAL_SERVER_ERROR,
 				message: 'Test error',
-			})
+			}),
 		);
 	});
 
@@ -97,14 +97,14 @@ describe('handleError', () => {
 		handleError(req, reply, error, 'Custom message');
 
 		expect(reply.status).toHaveBeenCalledWith(
-			StatusCodes.INTERNAL_SERVER_ERROR
+			StatusCodes.INTERNAL_SERVER_ERROR,
 		);
 		expect(reply.send).toHaveBeenCalledWith(
 			JSON.stringify({
 				path: '/test',
 				status: StatusCodes.INTERNAL_SERVER_ERROR,
 				message: 'Custom message',
-			})
+			}),
 		);
 	});
 
@@ -127,7 +127,7 @@ describe('handleError', () => {
 				path: '/test',
 				status: StatusCodes.BAD_REQUEST,
 				message: 'field: Invalid value',
-			})
+			}),
 		);
 	});
 
@@ -149,7 +149,7 @@ describe('handleError', () => {
 				path: '/test',
 				status: StatusCodes.NOT_FOUND,
 				message: 'Base exception error',
-			})
+			}),
 		);
 	});
 });

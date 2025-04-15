@@ -40,7 +40,7 @@ describe('FileService', () => {
 			fileRepository,
 			simpleStorageService,
 			simpleQueueService,
-			notificationService
+			notificationService,
 		);
 	});
 
@@ -77,7 +77,7 @@ describe('FileService', () => {
 			} catch (error: any) {
 				expect(error).toBeInstanceOf(InvalidFileException);
 				expect(error.message).toBe(
-					'Screenshot Time deve ser entre 0.1 e 30 segundos'
+					'Screenshot Time deve ser entre 0.1 e 30 segundos',
 				);
 			}
 		});
@@ -94,7 +94,7 @@ describe('FileService', () => {
 			} catch (error: any) {
 				expect(error).toBeInstanceOf(InvalidFileException);
 				expect(error.message).toBe(
-					'Screenshot Time deve ser entre 0.1 e 30 segundos'
+					'Screenshot Time deve ser entre 0.1 e 30 segundos',
 				);
 			}
 		});
@@ -131,12 +131,12 @@ describe('FileService', () => {
 
 			const result = await fileService.createFile(
 				validCreateParams,
-				validVideoFile
+				validVideoFile,
 			);
 
 			expect(simpleStorageService.uploadVideo).toHaveBeenCalledWith(
 				validCreateParams.userId,
-				validVideoFile
+				validVideoFile,
 			);
 			expect(fileRepository.createFile).toHaveBeenCalled();
 			expect(simpleQueueService.publishMessage).toHaveBeenCalledWith({
@@ -184,14 +184,14 @@ describe('FileService', () => {
 			const result = await fileService.updateFile(validUpdateParams);
 
 			expect(fileRepository.getFileByIdOrThrow).toHaveBeenCalledWith(
-				validUpdateParams.id
+				validUpdateParams.id,
 			);
 			expect(fileRepository.updateFile).toHaveBeenCalledWith(
 				expect.objectContaining({
 					id: validUpdateParams.id,
 					imagesCompressedUrl: validUpdateParams.compressedFileKey,
 					status: validUpdateParams.status,
-				})
+				}),
 			);
 			expect(notificationService.createNotification).toHaveBeenCalledWith(
 				expect.objectContaining({
@@ -200,7 +200,7 @@ describe('FileService', () => {
 					fileStatus: validUpdateParams.status,
 					fileId: existingFile.id,
 					imagesCompressedUrl: updatedFile.imagesCompressedUrl,
-				})
+				}),
 			);
 			expect(result).toEqual(updatedFile);
 		});
@@ -225,7 +225,7 @@ describe('FileService', () => {
 				.mockRejectedValue(new Error('Usuário não encontrado'));
 
 			await expect(fileService.updateFile(validUpdateParams)).rejects.toThrow(
-				'Usuário não encontrado'
+				'Usuário não encontrado',
 			);
 		});
 	});
@@ -247,7 +247,7 @@ describe('FileService', () => {
 
 			expect(fileRepository.getFileById).toHaveBeenCalledWith('file-1');
 			expect(simpleStorageService.getSignedUrl).toHaveBeenCalledWith(
-				expectedPath
+				expectedPath,
 			);
 			expect(result).toEqual(expectedSignedUrl);
 		});
@@ -269,7 +269,7 @@ describe('FileService', () => {
 			expect(fileRepository.getFileById).toHaveBeenCalledWith('file-1');
 			expect(fileRepository.deleteFile).toHaveBeenCalledWith('file-1');
 			expect(simpleStorageService.deleteFile).toHaveBeenCalledWith(
-				`${file.userId}/images/${file.imagesCompressedUrl}`
+				`${file.userId}/images/${file.imagesCompressedUrl}`,
 			);
 		});
 

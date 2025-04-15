@@ -10,7 +10,7 @@ describe('ConvertionNotificationDto', () => {
 		const dto = new ConvertionNotificationDto(
 			status,
 			userId,
-			compressedFileKey
+			compressedFileKey,
 		);
 
 		expect(dto.status).toBe(status);

@@ -33,7 +33,7 @@ COPY --from=build /app/dist ./dist
 COPY --from=build /app/prisma ./prisma
 
 # Define as variáveis de ambiente necessárias
-ENV DATABASE_URL=postgresql://postgres:docker@localhost:5433/tech-challenge-user
+ENV DATABASE_URL=postgresql://postgres:docker@localhost:5433/hackaton-api
 
 # Exposição da porta para API
 EXPOSE 3333
