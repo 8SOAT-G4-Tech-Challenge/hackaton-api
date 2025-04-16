@@ -1,6 +1,6 @@
 # Arquitetura dos sistema
 
-## Visão Geral
+## Visão geral
 
 O sistema **Hackaton** é uma solução para processamento de vídeos que permite a extração de frames por um período dinâmico(esse pode ser especificado na requisição) que por default é de 30 segundos, convertendo-os em imagens e disponibilizando-os em formato compactado (ZIP). A aplicação segue os princípios de arquitetura hexagonal e foi desenvolvida com foco em escalabilidade, resiliência e segurança.
 
@@ -149,12 +149,14 @@ A aplicação está configurada com:
 
 ##### Testes unitários
 
+![unit_converter](./assets/images/unit_test_hackaton_api.png)
+
 ##### Behavior Driven Development(BDD)
+
+![unit_converter](./assets/images/bdd_test_hackaton_api.png)
 
 #### hackaton-converter
 
 ##### Testes unitários
 ![unit_converter](./assets/images/unit_test_converter_api.png)
-
-##### Behavior Driven Development(BDD)
 
