@@ -1,9 +1,28 @@
+import {
+	CognitoIdentityProviderClient,
+	ListUsersCommand,
+} from '@aws-sdk/client-cognito-identity-provider';
 import { InvalidFileException } from '@exceptions/invalidFileException';
 import { MultipartFile } from '@fastify/multipart';
 import { CreateFileParams, UpdateFileParams } from '@ports/input/file';
 import { FileService } from '@src/core/application/services/fileService';
 
 import { FileMockBuilder } from '../../../../mocks/file.mock-builder';
+
+jest.mock('@aws-sdk/client-cognito-identity-provider', () => {
+	const originalModule = jest.requireActual(
+		'@aws-sdk/client-cognito-identity-provider',
+	);
+
+	return {
+		__esModule: true,
+		...originalModule,
+		CognitoIdentityProviderClient: jest.fn(() => ({
+			send: jest.fn(),
+		})),
+		ListUsersCommand: jest.fn(),
+	};
+});
 
 describe('FileService', () => {
 	let fileRepository: any;
@@ -40,7 +59,7 @@ describe('FileService', () => {
 			fileRepository,
 			simpleStorageService,
 			simpleQueueService,
-			notificationService
+			notificationService,
 		);
 	});
 
@@ -77,7 +96,7 @@ describe('FileService', () => {
 			} catch (error: any) {
 				expect(error).toBeInstanceOf(InvalidFileException);
 				expect(error.message).toBe(
-					'Screenshot Time deve ser entre 0.1 e 30 segundos'
+					'Screenshot Time deve ser entre 0.1 e 30 segundos',
 				);
 			}
 		});
@@ -94,7 +113,7 @@ describe('FileService', () => {
 			} catch (error: any) {
 				expect(error).toBeInstanceOf(InvalidFileException);
 				expect(error.message).toBe(
-					'Screenshot Time deve ser entre 0.1 e 30 segundos'
+					'Screenshot Time deve ser entre 0.1 e 30 segundos',
 				);
 			}
 		});
@@ -131,12 +150,12 @@ describe('FileService', () => {
 
 			const result = await fileService.createFile(
 				validCreateParams,
-				validVideoFile
+				validVideoFile,
 			);
 
 			expect(simpleStorageService.uploadVideo).toHaveBeenCalledWith(
 				validCreateParams.userId,
-				validVideoFile
+				validVideoFile,
 			);
 			expect(fileRepository.createFile).toHaveBeenCalled();
 			expect(simpleQueueService.publishMessage).toHaveBeenCalledWith({
@@ -184,14 +203,14 @@ describe('FileService', () => {
 			const result = await fileService.updateFile(validUpdateParams);
 
 			expect(fileRepository.getFileByIdOrThrow).toHaveBeenCalledWith(
-				validUpdateParams.id
+				validUpdateParams.id,
 			);
 			expect(fileRepository.updateFile).toHaveBeenCalledWith(
 				expect.objectContaining({
 					id: validUpdateParams.id,
 					imagesCompressedUrl: validUpdateParams.compressedFileKey,
 					status: validUpdateParams.status,
-				})
+				}),
 			);
 			expect(notificationService.createNotification).toHaveBeenCalledWith(
 				expect.objectContaining({
@@ -200,7 +219,7 @@ describe('FileService', () => {
 					fileStatus: validUpdateParams.status,
 					fileId: existingFile.id,
 					imagesCompressedUrl: updatedFile.imagesCompressedUrl,
-				})
+				}),
 			);
 			expect(result).toEqual(updatedFile);
 		});
@@ -225,7 +244,7 @@ describe('FileService', () => {
 				.mockRejectedValue(new Error('Usuário não encontrado'));
 
 			await expect(fileService.updateFile(validUpdateParams)).rejects.toThrow(
-				'Usuário não encontrado'
+				'Usuário não encontrado',
 			);
 		});
 	});
@@ -247,7 +266,7 @@ describe('FileService', () => {
 
 			expect(fileRepository.getFileById).toHaveBeenCalledWith('file-1');
 			expect(simpleStorageService.getSignedUrl).toHaveBeenCalledWith(
-				expectedPath
+				expectedPath,
 			);
 			expect(result).toEqual(expectedSignedUrl);
 		});
@@ -269,7 +288,7 @@ describe('FileService', () => {
 			expect(fileRepository.getFileById).toHaveBeenCalledWith('file-1');
 			expect(fileRepository.deleteFile).toHaveBeenCalledWith('file-1');
 			expect(simpleStorageService.deleteFile).toHaveBeenCalledWith(
-				`${file.userId}/images/${file.imagesCompressedUrl}`
+				`${file.userId}/images/${file.imagesCompressedUrl}`,
 			);
 		});
 
@@ -286,6 +305,283 @@ describe('FileService', () => {
 			} catch (error: any) {
 				expect(error).toBeInstanceOf(InvalidFileException);
 			}
+		});
+	});
+
+	describe('getUserInternal', () => {
+		let mockCognitoSend: jest.Mock;
+
+		beforeEach(() => {
+			mockCognitoSend = jest.fn();
+			(CognitoIdentityProviderClient as jest.Mock).mockImplementation(() => ({
+				send: mockCognitoSend,
+			}));
+
+			(ListUsersCommand as unknown as jest.Mock).mockImplementation(
+				(params) => ({
+					...params,
+				}),
+			);
+
+			process.env.AWS_REGION = 'us-east-1';
+			process.env.USER_POOL_ID = 'test-user-pool';
+		});
+
+		afterEach(() => {
+			jest.clearAllMocks();
+		});
+
+		it('should return user details when user exists', async () => {
+			const userId = 'user-123';
+			const mockResponse = {
+				Users: [
+					{
+						Username: 'testuser',
+						Attributes: [
+							{ Name: 'email', Value: 'test@example.com' },
+							{ Name: 'phone_number', Value: '+1234567890' },
+							{ Name: 'sub', Value: userId },
+						],
+					},
+				],
+			};
+			mockCognitoSend.mockResolvedValue(mockResponse);
+
+			const result = await (fileService as any).getUserInternal(userId);
+
+			expect(ListUsersCommand).toHaveBeenCalledWith({
+				UserPoolId: 'test-user-pool',
+				Filter: `sub = "${userId}"`,
+				Limit: 1,
+			});
+			expect(mockCognitoSend).toHaveBeenCalled();
+			expect(result).toEqual({
+				username: 'testuser',
+				email: 'test@example.com',
+				phoneNumber: '+1234567890',
+				id: userId,
+			});
+		});
+
+		it('should throw an error when user is not found', async () => {
+			const userId = 'nonexistent-user';
+			mockCognitoSend.mockResolvedValue({
+				Users: [],
+			});
+
+			await expect(
+				(fileService as any).getUserInternal(userId),
+			).rejects.toThrow('Usuário não encontrado');
+			expect(ListUsersCommand).toHaveBeenCalledWith({
+				UserPoolId: 'test-user-pool',
+				Filter: `sub = "${userId}"`,
+				Limit: 1,
+			});
+		});
+
+		it('should throw an error when Users property is undefined', async () => {
+			const userId = 'user-123';
+			mockCognitoSend.mockResolvedValue({});
+
+			await expect(
+				(fileService as any).getUserInternal(userId),
+			).rejects.toThrow('Usuário não encontrado');
+		});
+
+		it('should handle missing user attributes gracefully', async () => {
+			const userId = 'user-123';
+			const mockResponse = {
+				Users: [
+					{
+						Username: 'testuser',
+						Attributes: [],
+					},
+				],
+			};
+			mockCognitoSend.mockResolvedValue(mockResponse);
+
+			const result = await (fileService as any).getUserInternal(userId);
+
+			expect(result).toEqual({
+				username: 'testuser',
+				email: undefined,
+				phoneNumber: undefined,
+				id: undefined,
+			});
+		});
+
+		it('should mock getUserInternal in TEST_MODE', async () => {
+			const originalTestMode = process.env.TEST_MODE;
+			process.env.TEST_MODE = 'true';
+
+			const userId = 'test-user-id';
+
+			const result = await (fileService as any).getUserInternal(userId);
+
+			expect(result).toEqual({
+				username: 'test-user',
+				email: 'test@example.com',
+				phoneNumber: '+5511999999999',
+				id: userId,
+			});
+
+			expect(mockCognitoSend).not.toHaveBeenCalled();
+
+			process.env.TEST_MODE = originalTestMode;
+		});
+
+		it('should handle Cognito API errors', async () => {
+			const userId = 'user-123';
+			const errorMessage = 'API Error';
+			mockCognitoSend.mockRejectedValue(new Error(errorMessage));
+
+			await expect(
+				(fileService as any).getUserInternal(userId),
+			).rejects.toThrow(errorMessage);
+		});
+	});
+
+	describe('createFile in TEST_MODE', () => {
+		beforeEach(() => {
+			fileRepository = {
+				createFile: jest.fn(),
+				getFileById: jest.fn(),
+			};
+			simpleStorageService = {
+				uploadVideo: jest.fn().mockResolvedValue('mocked-video-url'),
+			};
+			simpleQueueService = {
+				publishMessage: jest.fn(),
+			};
+			notificationService = {
+				createNotification: jest.fn(),
+			};
+			fileService = new FileService(
+				fileRepository,
+				simpleStorageService,
+				simpleQueueService,
+				notificationService,
+			);
+
+			jest
+				.spyOn(fileService as any, 'validateVideoFormat')
+				.mockImplementation(() => {});
+		});
+
+		it('should mock file creation and skip queue when TEST_MODE is true', async () => {
+			const originalTestMode = process.env.TEST_MODE;
+			process.env.TEST_MODE = 'true';
+
+			const originalDateNow = Date.now;
+			Date.now = jest.fn().mockReturnValue(12345);
+
+			const createParams: CreateFileParams = {
+				userId: 'test-user-123',
+				screenshotsTime: 10,
+			};
+
+			const fakeFile: MultipartFile = {
+				filename: 'test-video.mp4',
+				mimetype: 'video/mp4',
+				file: {} as any,
+				fieldname: 'file',
+				encoding: '7bit',
+				type: 'file',
+				fields: {},
+				toBuffer: async () => Buffer.from('test'),
+			};
+
+			const result = await fileService.createFile(createParams, fakeFile);
+
+			expect(fileRepository.createFile).not.toHaveBeenCalled();
+
+			expect(simpleQueueService.publishMessage).not.toHaveBeenCalled();
+
+			expect(result.id).toBe('mock-file-id-12345');
+			expect(result.userId).toBe('test-user-123');
+
+			process.env.TEST_MODE = originalTestMode;
+			Date.now = originalDateNow;
+		});
+
+		it('should call repository and queue service when TEST_MODE is false', async () => {
+			const originalTestMode = process.env.TEST_MODE;
+			process.env.TEST_MODE = 'false';
+
+			const createParams: CreateFileParams = {
+				userId: 'test-user-123',
+				screenshotsTime: 10,
+			};
+
+			const fakeFile: MultipartFile = {
+				filename: 'test-video.mp4',
+				mimetype: 'video/mp4',
+				file: {} as any,
+				fieldname: 'file',
+				encoding: '7bit',
+				type: 'file',
+				fields: {},
+				toBuffer: async () => Buffer.from('test'),
+			};
+
+			const createdFile = {
+				id: 'real-db-id',
+				userId: 'test-user-123',
+				videoUrl: 'mocked-video-url',
+				imagesCompressedUrl: null,
+				status: 'initialized',
+				screenshotsTime: 10,
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			};
+
+			fileRepository.createFile.mockResolvedValue(createdFile);
+
+			const result = await fileService.createFile(createParams, fakeFile);
+
+			expect(fileRepository.createFile).toHaveBeenCalled();
+
+			expect(simpleQueueService.publishMessage).toHaveBeenCalledWith({
+				fileName: 'test-video.mp4',
+				fileStorageKey: 'mocked-video-url',
+				userId: 'test-user-123',
+				fileId: 'real-db-id',
+				screenshotsTime: 10,
+			});
+
+			expect(result).toBe(createdFile);
+
+			process.env.TEST_MODE = originalTestMode;
+		});
+
+		it('should still call uploadVideo even in TEST_MODE', async () => {
+			const originalTestMode = process.env.TEST_MODE;
+			process.env.TEST_MODE = 'true';
+
+			const createParams: CreateFileParams = {
+				userId: 'test-user-123',
+				screenshotsTime: 10,
+			};
+
+			const fakeFile: MultipartFile = {
+				filename: 'test-video.mp4',
+				mimetype: 'video/mp4',
+				file: {} as any,
+				fieldname: 'file',
+				encoding: '7bit',
+				type: 'file',
+				fields: {},
+				toBuffer: async () => Buffer.from('test'),
+			};
+
+			await fileService.createFile(createParams, fakeFile);
+
+			expect(simpleStorageService.uploadVideo).toHaveBeenCalledWith(
+				'test-user-123',
+				fakeFile,
+			);
+
+			process.env.TEST_MODE = originalTestMode;
 		});
 	});
 });

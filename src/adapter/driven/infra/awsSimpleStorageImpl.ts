@@ -2,10 +2,10 @@ import * as fs from 'fs';
 import path from 'path';
 
 import {
-	S3Client,
-	PutObjectCommand,
-	GetObjectCommand,
 	DeleteObjectCommand,
+	GetObjectCommand,
+	PutObjectCommand,
+	S3Client,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import logger from '@common/logger';
@@ -13,7 +13,7 @@ import { MultipartFile } from '@fastify/multipart';
 import { AwsSimpleStorage } from '@ports/output/awsSimpleStorage';
 
 export class AwsSimpleStorageImpl implements AwsSimpleStorage {
-	private client = new S3Client({ region: process.env.AWS_REGION });
+	private readonly client = new S3Client({ region: process.env.AWS_REGION });
 
 	private async saveMultipartToTmp(file: MultipartFile) {
 		const tmpPath = path.join('/tmp', file.filename);
@@ -34,6 +34,11 @@ export class AwsSimpleStorageImpl implements AwsSimpleStorage {
 	}
 
 	async getObject(key: string): Promise<any> {
+		if (process.env.TEST_MODE === 'true') {
+			logger.info(`[TEST MODE] Getting object file ${key}`);
+			return { Body: Buffer.from('mock content') };
+		}
+
 		const bucket = process.env.AWS_BUCKET;
 
 		const input = {
@@ -41,7 +46,7 @@ export class AwsSimpleStorageImpl implements AwsSimpleStorage {
 			Key: key,
 		};
 		logger.info(
-			`[BUCKET SERVICE] Getting object ${key} from AWS bucket ${bucket}`
+			`[BUCKET SERVICE] Getting object ${key} from AWS bucket ${bucket}`,
 		);
 		const command = new GetObjectCommand(input);
 		const response = await this.client.send(command);
@@ -55,6 +60,11 @@ export class AwsSimpleStorageImpl implements AwsSimpleStorage {
 	}
 
 	async uploadFile(bucketKey: string, file: MultipartFile): Promise<void> {
+		if (process.env.TEST_MODE === 'true') {
+			const key = bucketKey;
+			logger.info(`[TEST MODE] Successfully uploaded file ${key}`);
+			return;
+		}
 		const tempFile = await this.saveMultipartToTmp(file);
 
 		const bucket = process.env.AWS_BUCKET;
@@ -70,7 +80,7 @@ export class AwsSimpleStorageImpl implements AwsSimpleStorage {
 		};
 
 		logger.info(
-			`[BUCKET SERVICE] Uploading file ${file.filename} to AWS bucket ${bucket}: ${bucketKey}`
+			`[BUCKET SERVICE] Uploading file ${file.filename} to AWS bucket ${bucket}: ${bucketKey}`,
 		);
 		const command = new PutObjectCommand(input);
 		await this.client.send(command);
@@ -78,19 +88,29 @@ export class AwsSimpleStorageImpl implements AwsSimpleStorage {
 	}
 
 	async getSignedUrl(key: string): Promise<string> {
+		if (process.env.TEST_MODE === 'true') {
+			logger.info(`[TEST MODE] Get signed URL for ${key}`);
+			return `http://localhost:3333/test-signed-url/${key}`;
+		}
+
 		const signedUrl = await getSignedUrl(
 			this.client,
 			new GetObjectCommand({
 				Bucket: process.env.AWS_BUCKET,
 				Key: key,
 			}),
-			{ expiresIn: 60 * 60 }
+			{ expiresIn: 60 * 60 },
 		);
 
 		return signedUrl;
 	}
 
 	async deleteFile(key: string): Promise<void> {
+		if (process.env.TEST_MODE === 'true') {
+			logger.info(`[TEST MODE] Successfully deleted file ${key}`);
+			return;
+		}
+
 		const bucket = process.env.AWS_BUCKET;
 
 		const input = {

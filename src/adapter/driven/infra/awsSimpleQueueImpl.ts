@@ -4,13 +4,17 @@ import logger from '@common/logger';
 import { AwsSimpleQueue } from '@ports/output/awsSimpleQueue';
 
 export class AwsSimpleQueueImpl implements AwsSimpleQueue {
-	private client = new SQSClient({ region: process.env.AWS_REGION });
+	private readonly client = new SQSClient({ region: process.env.AWS_REGION });
 
 	async publishMessage(message: ConverterInfoDto): Promise<any> {
+		if (process.env.TEST_MODE === 'true') {
+			logger.info(`[TEST MODE] Sending message ${JSON.stringify(message)}`);
+			return Promise.resolve();
+		}
 		logger.info(
 			`[SQS SERVICE] Sending message ${JSON.stringify(message)} to queue: ${
 				process.env.AWS_SQS_URL
-			}`
+			}`,
 		);
 		const input = {
 			QueueUrl: process.env.AWS_SQS_URL,
