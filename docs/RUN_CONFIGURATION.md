@@ -18,6 +18,6 @@ A execução via cloud AWS consiste na utilização do ambiente da AWS Academy e
 
 1 - Certifique-se de executar primeiramente a configuração e provisionamento da infraestrutura antes de executar os próximos passos. A configuração pode ser consultada na documentação de execução da infraestrutura do repositório [hackaton-terraform](https://github.com/8SOAT-G4-Tech-Challenge/hackaton-terraform/docs/RUN_CONFIGURATION.md);
 
-2 - Acesse o menu `Actions` do repositório no GitHub, clique no botão New workflow e execute manualmente a ação de deploy. Essa fará o deploy do serviço no recurso EKS da AWS Academy.
+2 - Acesse o menu `Actions` do repositório no GitHub, clique no botão New workflow e execute manualmente a ação de deploy. Essa fará o deploy do microserviço no recurso EKS da AWS Academy.
 
 3 - Acesse o recurso Api Gateway dentro na AWS Academy e copie a url de acesso e requisite as APIs utilizando `<url-api-gateway>/files/...`.
