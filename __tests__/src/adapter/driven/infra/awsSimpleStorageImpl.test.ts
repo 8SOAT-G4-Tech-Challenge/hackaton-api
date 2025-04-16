@@ -1,10 +1,10 @@
 import { PassThrough } from 'stream';
 
 import {
-	S3Client,
-	PutObjectCommand,
-	GetObjectCommand,
 	DeleteObjectCommand,
+	GetObjectCommand,
+	PutObjectCommand,
+	S3Client,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl as mockedGetSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { MultipartFile } from '@fastify/multipart';
@@ -124,7 +124,7 @@ describe('AwsSimpleStorageImpl', () => {
 
 			expect(result).toBe('http://signed.url/fake');
 			expect((mockedGetSignedUrl as jest.Mock).mock.calls[0][1]).toBeInstanceOf(
-				GetObjectCommand
+				GetObjectCommand,
 			);
 			expect((mockedGetSignedUrl as jest.Mock).mock.calls[0][1].input).toEqual({
 				Bucket: process.env.AWS_BUCKET,
@@ -147,6 +147,192 @@ describe('AwsSimpleStorageImpl', () => {
 				Bucket: process.env.AWS_BUCKET,
 				Key: key,
 			});
+		});
+	});
+
+	describe('saveMultipartToTmp', () => {
+		it('should save multipart file to tmp directory', async () => {
+			const mockWriteStream = new PassThrough();
+			jest
+				.spyOn(jest.requireActual('fs'), 'createWriteStream')
+				.mockReturnValue(mockWriteStream);
+
+			const mockStat = { size: 1024 };
+			jest
+				.spyOn(jest.requireActual('fs').promises, 'stat')
+				.mockResolvedValue(mockStat);
+
+			const mockFile = new PassThrough();
+			const fakeMultipart: MultipartFile = {
+				filename: 'test.txt',
+				mimetype: 'text/plain',
+				file: mockFile as any,
+				fieldname: 'file',
+				encoding: '7bit',
+				type: 'file',
+				fields: {},
+				toBuffer: async () => Buffer.from('test content'),
+			};
+
+			setTimeout(() => {
+				mockFile.emit('end');
+			}, 10);
+
+			const result = await (storage as any).saveMultipartToTmp(fakeMultipart);
+
+			expect(result).toEqual({
+				path: expect.stringContaining('/tmp/test.txt'),
+				size: 1024,
+			});
+		});
+
+		it('should handle errors when saving to tmp', async () => {
+			const mockWriteStream = new PassThrough();
+			jest
+				.spyOn(jest.requireActual('fs'), 'createWriteStream')
+				.mockReturnValue(mockWriteStream);
+
+			const mockFile = new PassThrough();
+			const fakeMultipart: MultipartFile = {
+				filename: 'test.txt',
+				mimetype: 'text/plain',
+				file: mockFile as any,
+				fieldname: 'file',
+				encoding: '7bit',
+				type: 'file',
+				fields: {},
+				toBuffer: async () => Buffer.from('test content'),
+			};
+
+			const error = new Error('Stream error');
+			setTimeout(() => {
+				mockFile.emit('error', error);
+			}, 10);
+
+			await expect(
+				(storage as any).saveMultipartToTmp(fakeMultipart),
+			).rejects.toThrow('Stream error');
+		});
+	});
+
+	describe('getObject in TEST_MODE', () => {
+		it('should return mock content when TEST_MODE is true', async () => {
+			(mockedGetSignedUrl as jest.Mock).mockClear();
+			const originalTestMode = process.env.TEST_MODE;
+			process.env.TEST_MODE = 'true';
+
+			const key = 'folder/file.txt';
+			const result = await storage.getObject(key);
+
+			expect(result).toEqual({
+				Body: Buffer.from('mock content'),
+			});
+
+			expect(mockSend).not.toHaveBeenCalled();
+
+			process.env.TEST_MODE = originalTestMode;
+		});
+	});
+
+	describe('uploadVideo', () => {
+		it('should upload a video to S3 and return the key', async () => {
+			(storage as any).saveMultipartToTmp = jest.fn().mockResolvedValue({
+				path: '/tmp/video.mp4',
+				size: 1024,
+			});
+
+			const userId = 'user-123';
+			const fakeFileStream = Object.assign(new PassThrough(), {
+				truncated: false,
+				bytesRead: 100,
+			});
+			fakeFileStream.end('dummy video data');
+
+			const fakeMultipart: MultipartFile = {
+				filename: 'video.mp4',
+				mimetype: 'video/mp4',
+				file: fakeFileStream,
+				fieldname: 'file',
+				encoding: '7bit',
+				type: 'file',
+				fields: {},
+				toBuffer: async () => Buffer.from('dummy video data'),
+			};
+			const originalDateNow = Date.now;
+			Date.now = jest.fn().mockReturnValue(12345);
+
+			mockSend.mockResolvedValue({});
+
+			const result = await storage.uploadFile(userId, fakeMultipart);
+
+			expect(result).toBe(undefined);
+			expect(mockSend).toHaveBeenCalledTimes(1);
+
+			Date.now = originalDateNow;
+		});
+
+		it('should return a mock key when in TEST_MODE', async () => {
+			const originalTestMode = process.env.TEST_MODE;
+			process.env.TEST_MODE = 'true';
+
+			const userId = 'user-123';
+			const fakeFileStream = Object.assign(new PassThrough(), {
+				truncated: false,
+				bytesRead: 100,
+			});
+			fakeFileStream.end('dummy video data');
+
+			const fakeMultipart: MultipartFile = {
+				filename: 'video.mp4',
+				mimetype: 'video/mp4',
+				file: fakeFileStream,
+				fieldname: 'file',
+				encoding: '7bit',
+				type: 'file',
+				fields: {},
+				toBuffer: async () => Buffer.from('dummy video data'),
+			};
+
+			const originalDateNow = Date.now;
+			Date.now = jest.fn().mockReturnValue(12345);
+
+			const result = await storage.uploadFile(userId, fakeMultipart);
+
+			expect(result).toBe(undefined);
+			expect(mockSend).not.toHaveBeenCalled();
+
+			Date.now = originalDateNow;
+			process.env.TEST_MODE = originalTestMode;
+		});
+	});
+
+	describe('getSignedUrl in TEST_MODE', () => {
+		it('should return a mock URL when in TEST_MODE', async () => {
+			const originalTestMode = process.env.TEST_MODE;
+			process.env.TEST_MODE = 'true';
+
+			const key = 'folder/file.txt';
+			const result = await storage.getSignedUrl(key);
+
+			expect(result).toMatch(/http:\/\/localhost:\d+\/test-signed-url\/.*/);
+			expect(mockSend).not.toHaveBeenCalled();
+
+			process.env.TEST_MODE = originalTestMode;
+		});
+	});
+
+	describe('deleteFile in TEST_MODE', () => {
+		it('should skip S3 deletion when in TEST_MODE', async () => {
+			(mockedGetSignedUrl as jest.Mock).mockClear();
+			const originalTestMode = process.env.TEST_MODE;
+			process.env.TEST_MODE = 'true';
+
+			const key = 'folder/file.txt';
+			await storage.deleteFile(key);
+
+			expect(mockSend).not.toHaveBeenCalled();
+
+			process.env.TEST_MODE = originalTestMode;
 		});
 	});
 });

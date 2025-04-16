@@ -36,7 +36,7 @@ describe('NotificationController', () => {
 			await notificationController.getNotificationById(fakeReq, fakeReply);
 
 			expect(notificationService.getNotificationById).toHaveBeenCalledWith(
-				'notification-1'
+				'notification-1',
 			);
 			expect(fakeReply.code).toHaveBeenCalledWith(StatusCodes.OK);
 			expect(fakeReply.send).toHaveBeenCalledWith(notification);
@@ -49,7 +49,7 @@ describe('NotificationController', () => {
 			await notificationController.getNotificationById(fakeReq, fakeReply);
 
 			expect(notificationService.getNotificationById).toHaveBeenCalledWith(
-				'non-existent-id'
+				'non-existent-id',
 			);
 			expect(fakeReply.code).toHaveBeenCalledWith(StatusCodes.NOT_FOUND);
 			expect(fakeReply.send).toHaveBeenCalledWith({
@@ -77,7 +77,7 @@ describe('NotificationController', () => {
 			await notificationController.getNotificationsByUserId(fakeReq, fakeReply);
 
 			expect(notificationService.getNotificationsByUserId).toHaveBeenCalledWith(
-				'user-123'
+				'user-123',
 			);
 			expect(fakeReply.code).toHaveBeenCalledWith(StatusCodes.OK);
 			expect(fakeReply.send).toHaveBeenCalledWith([
