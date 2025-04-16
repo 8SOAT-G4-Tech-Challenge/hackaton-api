@@ -135,3 +135,4 @@ test-report.xml
 
 # cucumber
 cucumber-report.html
+*.mp4

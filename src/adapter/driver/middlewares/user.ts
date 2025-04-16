@@ -56,7 +56,7 @@ export async function userMiddleware(
 	}
 
 	const token =
-		request.headers.authorization?.replace('Bearer', '').trim() || '';
+		request.headers.authorization?.replace('Bearer', '').trim() ?? '';
 	if (token && !userClaimsBase64) {
 		return getUserLocalHost(token, request);
 	}

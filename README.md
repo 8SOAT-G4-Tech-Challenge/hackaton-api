@@ -24,6 +24,17 @@ A solução está dividida em três repositórios distintos, cada um com uma res
 - No console da AWS, acesso o serviço SNS e cadastre e valide seu TELEFONE em Simple Notification Service -> Mobile/Text messaging (SMS)
 Infraestrutura
 
+#### Testes Unitários
+- Executar o comando na raiz do projeto:
+- `npm run test`
+
+#### Testes BDD
+
+- Executar o ambiente local
+- Rodar as migrations para criação das tabelas no banco de dados
+- Executar o comando para rodar os testes:
+- `TEST_MODE="true" npm run test:bdd`
+
 </details>
 
 ## Arquitetura do Sistema
@@ -157,9 +168,17 @@ A aplicação está configurada com:
 #### Testes Unitários - API Converter
 ![unit_converter](./assets/images/unit_test_converter_api.png)
 
+#### Testes Unitários - API Hackaton
+![unit_hackaton](./assets/images/unit_test_hackaton_api.png)
+
+#### Testes BDD - API Hackton
+![bdd_hackaton](./assets/images/bdd_test_hackaton_api.png)
+
 ### Endpoints
 
-TODO
+- Utilizamos a ferramenta "Bruno" para realizar chamadas para nossas APIs
+- Nossas collections podem ser acessadas no repositório a seguir:
+**[hackaton-collections](https://github.com/8SOAT-G4-Tech-Challenge/tech-challenge-bruno)**
 
 ### Participantes
 

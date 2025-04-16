@@ -33,7 +33,7 @@ describe('NotificationRepositoryImpl', () => {
 				.build();
 
 			(prisma.notification.findUnique as jest.Mock).mockResolvedValue(
-				notificationMock
+				notificationMock,
 			);
 
 			const result = await repository.getNotificationById('notif-1');
@@ -100,7 +100,7 @@ describe('NotificationRepositoryImpl', () => {
 			};
 
 			(prisma.notification.create as jest.Mock).mockResolvedValue(
-				createdNotification
+				createdNotification,
 			);
 
 			const result = await repository.createNotification(inputNotification);
