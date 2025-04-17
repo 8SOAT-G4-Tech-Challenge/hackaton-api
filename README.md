@@ -16,6 +16,10 @@ Ele utiliza o recurso AWS S3 para armazenar os videos e também utiliza um banco
 
 Para realizar a execução local ou via cloud AWSm siga a seguinte documentação [Execução do serviço](./docs/RUN_CONFIGURATION.md) 
 
+## Endpoints
+
+Para consultar e requisitar os endpoints existentes nesse microserviço, acesse o repositório [hackaton-bruno](https://github.com/8SOAT-G4-Tech-Challenge/hackaton-bruno).
+
 ## Arquitetura do Sistema
 
 Para saber mais detalhes sobre a arquitetura do sistema que esse serviço faz parte acesse a documentação [Arquitetura do Sistema](./docs/SYSTEM_ARCHITECTURE.md)
