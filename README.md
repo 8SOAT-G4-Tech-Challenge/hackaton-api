@@ -10,6 +10,7 @@ Ele utiliza o recurso AWS S3 para armazenar os videos e também utiliza um banco
 - Node 20 e Typescript;
 - Docker e docker compose;
 - Conta AWS Academy;
+- AWS CLI;
 - Acesso as configurações do repositório no Git Hub.
 
 ## Execução
