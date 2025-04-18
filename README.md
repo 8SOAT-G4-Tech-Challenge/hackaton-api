@@ -1,4 +1,4 @@
-## FIAP Hackaton 8SOAT - Grupo 04 - Microserviço de solitação e consulta de conversões de videos
+## FIAP Hackaton 8SOAT - Grupo 04 - Microserviço de solicitação e consulta de conversões de videos
 
 ## Objetivo
 
